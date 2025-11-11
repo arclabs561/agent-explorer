@@ -27,10 +27,9 @@ from . import rag as ragmod
 from . import index as indexmod
 from . import toolchat as toolchatmod
 from . import qa as qamod
-# memory module removed - functionality may be elsewhere
+# memory and docs modules removed - functionality may be elsewhere
 from . import streams as streammod
 from . import cluster as clustermod
-from . import docs as docmod
 
 # Load .env if present (optional dependency). This runs for all CLI commands.
 envmod.load_dotenv_if_present()
@@ -497,9 +496,9 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 		if not getattr(args, "root", None):
 			print(json.dumps({"error": "root directory required for markdown source"}))
 			return 2
-		wrote = docmod.index_markdown_dir(args.root, args.out, extensions=(args.ext or None), include_hidden=args.include_hidden)
-		print(json.dumps({"wrote": wrote, "path": expand_abs(args.out)}))
-		return 0
+		# docs module not available
+		print(json.dumps({"error": "docs module not available", "path": expand_abs(args.out)}, ensure_ascii=False, indent=2))
+		return 1
 	else:
 		print(json.dumps({"error": f"unsupported source: {args.source}"}))
 		return 2
