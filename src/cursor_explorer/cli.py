@@ -19,7 +19,6 @@ from . import adversary as adversarymod
 from . import annotate as annotatemod
 import llm_helpers as llmmod
 from . import env as envmod
-from . import prompts as promptmod
 from .formatting import pretty_json_or_text, preview
 from . import trace as tracemod
 from . import fuzz as fuzzmod
@@ -233,7 +232,7 @@ def cmd_pairs(args: argparse.Namespace) -> int:
 
 
 def cmd_adversarial(args: argparse.Namespace) -> int:
-	conn = dbmod.connect_readonly(_get_db_path(args))
+	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	pairs = parsermod.build_qa_pairs(messages)
 	out = []
@@ -249,13 +248,22 @@ def cmd_adversarial(args: argparse.Namespace) -> int:
 def cmd_prompt(args: argparse.Namespace) -> int:
 	client = llmmod.require_client()
 	model = args.llm_model or os.getenv("OPENAI_MODEL", "gpt-5")
-	template = promptmod.load_prompt(args.template)
+	# Load prompt template from file
+	template_path = os.path.join("prompts", args.template)
+	if not os.path.exists(template_path):
+		print(f"Error: Template not found: {template_path}", file=sys.stderr)
+		return 2
+	with open(template_path, "r") as f:
+		template = f.read()
+	# Render variables
 	variables = {}
 	for kv in (args.var or []):
 		if "=" in kv:
 			k, v = kv.split("=", 1)
 			variables[k] = v
-	body = promptmod.render_prompt(template, variables)
+	body = template
+	for k, v in variables.items():
+		body = body.replace(f"{{{k}}}", v)
 	resp = client.chat.completions.create(
 		model=model,
 		messages=[{"role": "user", "content": body}],
@@ -267,7 +275,7 @@ def cmd_prompt(args: argparse.Namespace) -> int:
 
 
 def cmd_scales(args: argparse.Namespace) -> int:
-	conn = dbmod.connect_readonly(_get_db_path(args))
+	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	pairs = parsermod.build_qa_pairs(messages)
 	result = {"heuristic": annotatemod.annotate_conversation_scales(pairs)}
@@ -328,7 +336,7 @@ def _build_corpus(conn, composer_id: str, scope: str):
 
 
 def cmd_index_embeds(args: argparse.Namespace) -> int:
-	conn = dbmod.connect_readonly(_get_db_path(args))
+	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
 	items = _build_corpus(conn, args.composer_id, args.scope)
 	if not items:
 		print(json.dumps({"error": "no items"}))
@@ -342,7 +350,7 @@ def cmd_index_embeds(args: argparse.Namespace) -> int:
 
 
 def cmd_vsearch(args: argparse.Namespace) -> int:
-	conn = dbmod.connect_readonly(_get_db_path(args))
+	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
 	items = _build_corpus(conn, args.composer_id, args.scope)
 	if not items:
 		print(json.dumps({"error": "no items"}))
@@ -364,7 +372,7 @@ def cmd_vsearch(args: argparse.Namespace) -> int:
 
 def cmd_review(args: argparse.Namespace) -> int:
 	# Review annotations for real chats: base vs adversarial variants
-	conn = dbmod.connect_readonly(_get_db_path(args))
+	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	pairs = parsermod.build_qa_pairs(messages)
 	if not pairs:
@@ -412,7 +420,7 @@ def cmd_review(args: argparse.Namespace) -> int:
 
 def cmd_rag(args: argparse.Namespace) -> int:
 	# Build index from a real conversation and retrieve items by seed queries
-	conn = dbmod.connect_readonly(_get_db_path(args))
+	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	items = ragmod.build_turn_items(messages)
 	results: Dict[str, list] = {}
