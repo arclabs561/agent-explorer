@@ -62,4 +62,3 @@ class AgentBackend(ABC):
             Expanded absolute path
         """
         return os.path.abspath(os.path.expanduser(os.path.expandvars(path)))
-

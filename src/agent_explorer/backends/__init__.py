@@ -27,4 +27,3 @@ def get_backend(agent_type: str = None) -> AgentBackend:
         raise ValueError(f"Unknown agent type: {agent_type}. Available: {list(BACKENDS.keys())}")
     
     return BACKENDS[agent_type]()
-

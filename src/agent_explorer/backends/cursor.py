@@ -63,4 +63,3 @@ class CursorBackend(AgentBackend):
     def get_agent_name(self) -> str:
         """Return agent identifier."""
         return "cursor"
-

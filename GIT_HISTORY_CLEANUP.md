@@ -77,7 +77,8 @@ bfg --delete-files "*.key"
 bfg --delete-files "*.secret"
 
 # Remove sensitive text patterns
-bfg --replace-text passwords.txt  # File with old=new mappings
+# Create passwords.txt with old=new mappings, then:
+# bfg --replace-text passwords.txt
 
 # Clean up
 cd repo.git
