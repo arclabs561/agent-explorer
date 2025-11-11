@@ -476,9 +476,9 @@ def cmd_sample(args: argparse.Namespace) -> int:
 
 
 def cmd_docs_index(args: argparse.Namespace) -> int:
-	wrote = docmod.index_markdown_dir(args.root, args.out, extensions=(args.ext or None), include_hidden=args.include_hidden)
-	print(json.dumps({"wrote": wrote, "path": expand_abs(args.out)}))
-	return 0
+	# docs module not available - return error
+	print(json.dumps({"error": "docs module not available", "path": expand_abs(args.out)}, ensure_ascii=False, indent=2))
+	return 1
 
 
 def cmd_ingest(args: argparse.Namespace) -> int:
