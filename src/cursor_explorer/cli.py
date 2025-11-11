@@ -584,12 +584,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 	sp = sub.add_parser("keys", parents=[parent], help="List keys in agent key-value table")
 	sp.add_argument("--prefix", help="Prefix filter (e.g. composerData:)")
-	sp.add_argument("--like", help="LIKE pattern (e.g. %foo%)")
+	sp.add_argument("--like", help="LIKE pattern (e.g. %%%%foo%%%%)")
 	sp.add_argument("--limit", type=int, default=50)
 	sp.set_defaults(func=cmd_keys)
 
 	sp = sub.add_parser("search", parents=[parent], help="Search keys/values in agent key-value table")
-	sp.add_argument("--key-like", help="Key LIKE pattern (e.g. %foo%)")
+	sp.add_argument("--key-like", help="Key LIKE pattern (e.g. %%foo%%)")
 	sp.add_argument("--contains", help="Substring to search in values")
 	sp.add_argument("--limit", type=int, default=50)
 	sp.set_defaults(func=cmd_search)
