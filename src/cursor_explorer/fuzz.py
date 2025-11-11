@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from . import adversary as adversarymod
 from . import annotate as annotatemod
 from . import trace as tracemod
-from . import pyd_models as pmodels
+# pyd_models removed - using dicts directly
 import llm_helpers as llmmod
 
 
