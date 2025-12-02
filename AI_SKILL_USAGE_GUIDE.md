@@ -15,44 +15,44 @@
 
 ### When I Should Use skill-mcp Tools
 
-#### ✅ Use `list_skills` when:
+####  Use `list_skills` when:
 - User asks "what skills do we have?"
 - User asks "list available skills"
 - I need to check if a skill exists before using it
 - User wants to see what's available
 
-#### ✅ Use `get_skill_details` when:
+####  Use `get_skill_details` when:
 - User asks about a specific skill
 - I need to understand what a skill does
 - I need to see what scripts/files a skill has
 - User asks "show me details about git-workflow"
 
-#### ✅ Use `read_skill_file` when:
+####  Use `read_skill_file` when:
 - User wants to see skill code
 - User asks "show me the merge_base script"
 - I need to understand how a skill works
 - User wants to review skill implementation
 
-#### ✅ Use `run_skill_script` when:
+####  Use `run_skill_script` when:
 - User explicitly asks to run a skill script
 - User wants a workflow that composes skill operations
 - The operation benefits from skill's error handling/validation
 - It's part of a larger composed workflow
 
-#### ✅ Use `read_skill_env` / `update_skill_env` when:
+####  Use `read_skill_env` / `update_skill_env` when:
 - User asks about skill environment variables
 - User wants to configure a skill
 - Managing skill configuration
 
 ### When I Should NOT Use skill-mcp Tools
 
-#### ❌ Don't use for simple operations:
+####  Don't use for simple operations:
 - `git status` → Use `run_terminal_cmd("git status")`
 - `git add .` → Use `run_terminal_cmd("git add .")`
 - `ls` → Use `list_dir` or `run_terminal_cmd("ls")`
 - Reading a file → Use `read_file` directly
 
-#### ❌ Don't use when direct tools are better:
+####  Don't use when direct tools are better:
 - Simple file operations → Use `read_file`, `write_file`
 - Simple commands → Use `run_terminal_cmd`
 - Code search → Use `grep`, `codebase_search`
@@ -84,14 +84,14 @@
 
 ### Example 1: User asks "What skills do we have?"
 ```python
-# ✅ CORRECT: Use list_skills
+#  CORRECT: Use list_skills
 skills = list_skills()
 # Return: List of skills with descriptions
 ```
 
 ### Example 2: User asks "Run branch_list from git-workflow"
 ```python
-# ✅ CORRECT: Use run_skill_script
+#  CORRECT: Use run_skill_script
 result = run_skill_script(
     skill_name="git-workflow",
     script_path="scripts/branch_list.py",
@@ -102,14 +102,14 @@ result = run_skill_script(
 
 ### Example 3: User asks "What's my current git branch?"
 ```python
-# ✅ CORRECT: Use run_terminal_cmd (simple operation)
+#  CORRECT: Use run_terminal_cmd (simple operation)
 result = run_terminal_cmd("git rev-parse --abbrev-ref HEAD")
 # NOT: run_skill_script("git-workflow", "scripts/branch_list.py")
 ```
 
 ### Example 4: User asks "Validate commits in my branch"
 ```python
-# ✅ CORRECT: Use skill (composable workflow)
+#  CORRECT: Use skill (composable workflow)
 result = run_skill_script(
     "git-workflow",
     "scripts/rebase_check.py",
@@ -120,7 +120,7 @@ result = run_skill_script(
 
 ## Anti-Patterns I Should Avoid
 
-### ❌ Anti-Pattern 1: Over-using skills
+###  Anti-Pattern 1: Over-using skills
 ```python
 # WRONG: Using skill for simple git command
 run_skill_script("git-workflow", "scripts/branch_list.py")  # Just to get current branch
@@ -129,7 +129,7 @@ run_skill_script("git-workflow", "scripts/branch_list.py")  # Just to get curren
 run_terminal_cmd("git rev-parse --abbrev-ref HEAD")
 ```
 
-### ❌ Anti-Pattern 2: Not checking skill existence
+###  Anti-Pattern 2: Not checking skill existence
 ```python
 # WRONG: Assuming skill exists
 run_skill_script("nonexistent-skill", "script.py")
@@ -140,7 +140,7 @@ if "git-workflow" in [s.name for s in skills]:
     run_skill_script("git-workflow", "script.py")
 ```
 
-### ❌ Anti-Pattern 3: Using skills for one-off operations
+###  Anti-Pattern 3: Using skills for one-off operations
 ```python
 # WRONG: Creating/using skill for single command
 run_skill_script("git-workflow", "scripts/merge_base.py", ["origin/main"])
@@ -153,12 +153,12 @@ run_terminal_cmd("git merge-base HEAD origin/main")
 
 Before using skill-mcp tools, I should ask:
 
-1. ✅ **Is this about skills?** → Use skill-mcp tools
-2. ✅ **Is this a simple operation?** → Use direct tools instead
-3. ✅ **Does this benefit from composition?** → Consider skill-mcp
-4. ✅ **Does the skill exist?** → Check with `list_skills` first
-5. ✅ **Are parameters correct?** → Validate before calling
-6. ✅ **Will this help the user?** → Use the right tool for the job
+1.  **Is this about skills?** → Use skill-mcp tools
+2.  **Is this a simple operation?** → Use direct tools instead
+3.  **Does this benefit from composition?** → Consider skill-mcp
+4.  **Does the skill exist?** → Check with `list_skills` first
+5.  **Are parameters correct?** → Validate before calling
+6.  **Will this help the user?** → Use the right tool for the job
 
 ## Key Principles for Me
 

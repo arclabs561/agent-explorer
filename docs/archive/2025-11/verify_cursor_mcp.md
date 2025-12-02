@@ -110,20 +110,20 @@ If the MCP tools work, test actual script execution:
 
 When working correctly, you should be able to:
 
-✅ Ask Claude to list skills and see `git-workflow`
-✅ Ask Claude to show skill details and get full metadata
-✅ Ask Claude to read skill files and see the content
-✅ Ask Claude to run skill scripts and get results
+ Ask Claude to list skills and see `git-workflow`
+ Ask Claude to show skill details and get full metadata
+ Ask Claude to read skill files and see the content
+ Ask Claude to run skill scripts and get results
 
 ## The Real Validation
 
 **The only real validation is: Can you use the skills in Cursor?**
 
 If you can ask Claude to:
-- List skills → ✅ Working
-- Get skill details → ✅ Working  
-- Read skill files → ✅ Working
-- Run skill scripts → ✅ Working
+- List skills →  Working
+- Get skill details →  Working  
+- Read skill files →  Working
+- Run skill scripts →  Working
 
 Then everything is validated and working!
 

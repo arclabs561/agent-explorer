@@ -4,16 +4,35 @@ Agent-agnostic CLI tool for exploring AI agent chat data. Supports multiple agen
 
 This repo hosts pragmatic, composable dev tools. Each tool is a small, focused CLI with shared Python modules under `src/`.
 
-## Common setup
+## Installation
 
-- Install uv:
+### Prerequisites
+
+- Python 3.9+
+- [uv](https://github.com/astral-sh/uv) package manager
+
+Install uv:
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
-- Sync env (installs dev tools and shared libs):
+
+### Install Dependencies
+
+1. **Main project dependencies:**
 ```bash
 uv sync --all-extras --dev
 ```
+
+2. **Required external dependencies:**
+```bash
+# Install multiscale from GitHub
+uv pip install git+https://github.com/arclabs561/multiscale.git
+
+# Install llm-helpers (for local development, see README_DEPENDENCIES.md)
+uv pip install -e ../llm-helpers  # Or publish llm-helpers first
+```
+
+See [README_DEPENDENCIES.md](README_DEPENDENCIES.md) for detailed dependency installation instructions.
 - Lint/tests:
 ```bash
 uv run ruff check .

@@ -10,7 +10,7 @@ Skills should be created when they provide **composable, reusable functionality*
 
 ## Decision Framework
 
-### ✅ Create a Skill When:
+###  Create a Skill When:
 
 1. **Composable Operations**: Can be combined with other operations in workflows
 2. **Non-Interactive Automation**: Needs to run without human input (CI/CD, scripts)
@@ -18,7 +18,7 @@ Skills should be created when they provide **composable, reusable functionality*
 4. **Integration Points**: Provides clean API over complex operations or integrates with other tools
 5. **Frequently Repeated Patterns**: You find yourself doing the same sequence repeatedly
 
-### ❌ Don't Create a Skill When:
+###  Don't Create a Skill When:
 
 1. **Simple One-Off Operations**: Single commands like `git add`, `ls`, `cat`
 2. **Interactive Workflows**: Require human judgment at each step
@@ -27,7 +27,7 @@ Skills should be created when they provide **composable, reusable functionality*
 
 ## Real Examples from This Codebase
 
-### ✅ Good: `git-workflow` Skill
+###  Good: `git-workflow` Skill
 
 **Why it's good:**
 - Composes multiple git operations (rebase_check, commit_fixup, merge_base)
@@ -45,7 +45,7 @@ if not result["success"]:
         commit_fixup(commit)
 ```
 
-### ❌ Bad: `git-add` Skill
+###  Bad: `git-add` Skill
 
 **Why it's bad:**
 - Single, simple operation

@@ -1,3 +1,0 @@
-#!/bin/bash
-
-eza -lahH --git --sort modified "$@"

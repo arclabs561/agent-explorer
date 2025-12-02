@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 llm_usage.jsonl
 llm_cache.sqlite
 __pycache__/
@@ -15,6 +17,9 @@ cognee-storage/
 data/
 *.db
 *.sqlite
+cursor_index.jsonl
+cursor_vec.db
+cursor_items.db
 
 # Logs
 logs/
@@ -25,3 +30,14 @@ logs/
 
 # Environment backup files
 .env.bak*
+
+# Personal directories (should not be in public repo)
+dotfiles/
+bin/
+
+# Submodules or large external dependencies
+cognee/
+
+# Temporary/duplicate files
+* 2.py
+* 2.*

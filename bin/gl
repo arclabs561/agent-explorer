@@ -1,5 +1,0 @@
-#!/bin/bash
-
-set -e
-
-git log --oneline --color=always --reverse

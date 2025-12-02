@@ -1,7 +1,0 @@
-#!/bin/bash
-
-dir=$(mktemp -d)
-# TODO: Infer filetypes
-path="$dir/file.html"
-cat - > "$path"
-open -a "Google Chrome" "$path"

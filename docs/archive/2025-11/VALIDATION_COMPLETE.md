@@ -1,4 +1,4 @@
-# ✅ Skill-MCP Validation Complete
+#  Skill-MCP Validation Complete
 
 ## Summary
 
@@ -6,41 +6,41 @@
 
 ## Validation Results
 
-### ✅ Test 1: Directory Structure
+###  Test 1: Directory Structure
 - Skills directory exists: `~/.skill-mcp/skills`
 - git-workflow skill directory exists
 - All required files present:
-  - ✅ SKILL.md
-  - ✅ scripts/rebase_check.py
-  - ✅ scripts/merge_base.py
-  - ✅ scripts/branch_list.py
-  - ✅ scripts/commit_fixup.py
+  -  SKILL.md
+  -  scripts/rebase_check.py
+  -  scripts/merge_base.py
+  -  scripts/branch_list.py
+  -  scripts/commit_fixup.py
 - All scripts are executable
 
-### ✅ Test 2: Skill Listing
+###  Test 2: Skill Listing
 - MCP tool `list_skills` works correctly
 - Found 1 skill: `git-workflow`
 - Skill description is correct
 
-### ✅ Test 3: Skill Details
+###  Test 3: Skill Details
 - MCP tool `get_skill_details` works correctly
 - SKILL.md metadata is valid (name, description, version)
 - All 4 scripts detected correctly
 - Scripts have PEP 723 dependency declarations
 
-### ✅ Test 4: Script Execution
+###  Test 4: Script Execution
 - All 4 scripts respond to `--help` correctly:
-  - ✅ `merge_base.py --help`
-  - ✅ `branch_list.py --help`
-  - ✅ `rebase_check.py --help`
-  - ✅ `commit_fixup.py --help`
+  -  `merge_base.py --help`
+  -  `branch_list.py --help`
+  -  `rebase_check.py --help`
+  -  `commit_fixup.py --help`
 - Scripts are executable and runnable
 - No syntax errors in Python scripts
 
-### ✅ Test 5: Git Workflow Functions (Real Git Repo)
+###  Test 5: Git Workflow Functions (Real Git Repo)
 Tested in `/Users/arc/Documents/dev/devdev/cognee`:
 
-- ✅ `branch_list.py` works:
+-  `branch_list.py` works:
   ```json
   [
     {
@@ -56,12 +56,12 @@ Tested in `/Users/arc/Documents/dev/devdev/cognee`:
   ]
   ```
 
-- ✅ `merge_base.py` works:
+-  `merge_base.py` works:
   ```
   487635b71b204e62a28e91f141b64ae90708d68d
   ```
 
-### ✅ Test 6: MCP Configuration
+###  Test 6: MCP Configuration
 - skill-mcp configured in Cursor MCP config (`~/.cursor/mcp.json`)
 - Configuration uses `uvx` correctly:
   ```json
@@ -76,10 +76,10 @@ Tested in `/Users/arc/Documents/dev/devdev/cognee`:
 
 All skill-mcp MCP tools work correctly:
 
-1. ✅ `list_skills` - Lists all available skills
-2. ✅ `get_skill_details` - Gets comprehensive skill information
-3. ✅ `read_skill_file` - Reads files from skills
-4. ✅ `run_skill_script` - Executes skill scripts (ready to use)
+1.  `list_skills` - Lists all available skills
+2.  `get_skill_details` - Gets comprehensive skill information
+3.  `read_skill_file` - Reads files from skills
+4.  `run_skill_script` - Executes skill scripts (ready to use)
 
 ## How to Validate Yourself
 
@@ -126,9 +126,9 @@ python3 validate_skill_mcp.py
 
 ## Files Created
 
-- ✅ `validate_skill_mcp.py` - Comprehensive validation script
-- ✅ `VALIDATION_RESULTS.md` - Detailed validation results
-- ✅ `VALIDATION_COMPLETE.md` - This summary document
+-  `validate_skill_mcp.py` - Comprehensive validation script
+-  `VALIDATION_RESULTS.md` - Detailed validation results
+-  `VALIDATION_COMPLETE.md` - This summary document
 
 ## Status
 

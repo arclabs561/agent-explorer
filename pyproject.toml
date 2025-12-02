@@ -16,6 +16,11 @@ dependencies = [
     "numpy>=2.0.2",
     "toponymy>=0.3.0",
     "umap-learn>=0.5.9.post2",
+    # Local development dependencies - use git URLs for public release
+    # For local dev, install with: uv pip install -e ../multiscale -e ../llm-helpers
+    "multiscale @ git+https://github.com/arclabs561/multiscale.git",
+    # llm-helpers is not yet published - users need to install manually or use local path
+    # "llm-helpers @ git+https://github.com/user/llm-helpers.git",  # TODO: Publish to GitHub/PyPI
 ]
 
 [project.optional-dependencies]
@@ -29,19 +34,8 @@ dotenv = [
   "python-dotenv>=1.0.1",
 ]
 
-[project.scripts]
-agent-explorer = "cursor_explorer.cli:main"
-cursor-explorer = "cursor_explorer.cli:main"  # Backward compatibility alias
-cursor-chat-explorer = "cursor_explorer.cli:main"  # Backward compatibility alias
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-packages = ["cursor_explorer"]
-py-modules = ["llm_helpers", "llm_cache"]
-
-[tool.uv]
-# Development-time tools
-dev-dependencies = [
+[dependency-groups]
+dev = [
   "pytest>=8.3",
   "pytest-cov>=4.1",
   "pytest-xdist>=3.5",
@@ -50,6 +44,20 @@ dev-dependencies = [
   "pytest-timeout>=2.3",
   "ruff>=0.5",
 ]
+
+[project.scripts]
+agent-explorer = "cursor_explorer.cli:main"
+cursor-explorer = "cursor_explorer.cli:main"  # Backward compatibility alias
+cursor-chat-explorer = "cursor_explorer.cli:main"  # Backward compatibility alias
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["cursor_explorer"]
+py-modules = ["llm_utils", "llm_cache"]
+
+[tool.uv]
+# uv-specific configuration
+# Dev dependencies are in [dependency-groups.dev] (PEP 735 standard)
 
 [tool.ruff]
 line-length = 220

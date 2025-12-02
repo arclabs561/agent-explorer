@@ -1,5 +1,0 @@
-#!/bin/bash
-
-set -e
-
-jq . "$1" | sponge "$1"

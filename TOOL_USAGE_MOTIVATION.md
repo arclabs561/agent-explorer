@@ -84,7 +84,7 @@ Clear rules for when to use what:
 ```
 User: "Validate my commits"
 Me: [Sees many tools, defaults to simplest]
-    → Uses run_terminal_cmd("git log") ❌
+    → Uses run_terminal_cmd("git log") 
 ```
 
 ### After (With Explicit Prompts)
@@ -92,7 +92,7 @@ Me: [Sees many tools, defaults to simplest]
 User: "Validate my commits"
 Me: [Reads SKILL.md, sees explicit mapping]
     → "When user says 'validate commits' → use run_skill_script(...)"
-    → Uses run_skill_script("git-workflow", "scripts/rebase_check.py") ✅
+    → Uses run_skill_script("git-workflow", "scripts/rebase_check.py") 
 ```
 
 ## The Key Insight

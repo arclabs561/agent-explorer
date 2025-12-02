@@ -17,7 +17,7 @@ except ImportError:
 from . import parser as parsermod
 from . import adversary as adversarymod
 from . import annotate as annotatemod
-import llm_helpers as llmmod
+import llm_utils as llmmod
 from . import env as envmod
 from .formatting import pretty_json_or_text, preview
 from . import trace as tracemod
@@ -30,6 +30,9 @@ from . import qa as qamod
 # memory and docs modules removed - functionality may be elsewhere
 from . import streams as streammod
 from . import cluster as clustermod
+from . import multiscale as multiscalemod
+from . import memory as memmod
+import llm_cache
 
 # Load .env if present (optional dependency). This runs for all CLI commands.
 envmod.load_dotenv_if_present()
@@ -584,12 +587,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 	sp = sub.add_parser("keys", parents=[parent], help="List keys in agent key-value table")
 	sp.add_argument("--prefix", help="Prefix filter (e.g. composerData:)")
-	sp.add_argument("--like", help="LIKE pattern (e.g. %%%%foo%%%%)")
+	sp.add_argument("--like", help="LIKE pattern (e.g. %%foo%%)")
 	sp.add_argument("--limit", type=int, default=50)
 	sp.set_defaults(func=cmd_keys)
 
 	sp = sub.add_parser("search", parents=[parent], help="Search keys/values in agent key-value table")
-	sp.add_argument("--key-like", help="Key LIKE pattern (e.g. %%foo%%)")
+	sp.add_argument("--key-like", help="Key LIKE pattern (e.g. %foo%)")
 	sp.add_argument("--contains", help="Substring to search in values")
 	sp.add_argument("--limit", type=int, default=50)
 	sp.set_defaults(func=cmd_search)
@@ -926,6 +929,377 @@ def build_parser() -> argparse.ArgumentParser:
 	sp.add_argument("--max-streams", type=int)
 	sp.add_argument("--max-ids", type=int, default=5)
 	sp.set_defaults(func=lambda a: print(json.dumps(streammod.summarize_streams_recursive(a.streams_json, a.out_json, model=a.model, fanout=a.fanout, depth=a.depth, max_streams=a.max_streams, max_ids=a.max_ids), ensure_ascii=False, indent=2)))
+
+	# Multi-scale viewing (RAPTOR-inspired recursive summarization)
+	sp = sub.add_parser("multiscale", parents=[parent], help="Multi-scale viewing: level 0=message, 1=conversation, 2=corpus, 3+=recursive (RAPTOR-like)")
+	sp.add_argument("--composer-id", help="Single conversation ID (required for level 0-1)")
+	sp.add_argument("--index-jsonl", help="Path to corpus index JSONL (required for level 2+)")
+	sp.add_argument("--level", type=int, default=1, help="Scale level: 0=message, 1=conversation, 2=corpus, 3+=recursive")
+	sp.add_argument("--model", help="LLM model for summarization (defaults to OPENAI_SMALL_MODEL or gpt-4o-mini)")
+	sp.add_argument("--fanout", type=int, default=6, help="Fanout for recursive grouping (level 3+)")
+	sp.add_argument("--depth", type=int, default=3, help="Recursive depth (level 3+)")
+	sp.add_argument("--save-tree", help="Save RAPTOR tree to JSON file (for level 3+)")
+	def _cmd_multiscale(a: argparse.Namespace) -> int:
+		try:
+			result = multiscalemod.view_scale(
+				composer_id=a.composer_id,
+				index_jsonl=a.index_jsonl,
+				level=a.level,
+				model=a.model,
+				db_path=a.db,
+				fanout=a.fanout,
+				depth=a.depth,
+				save_tree=getattr(a, "save_tree", None),
+			)
+			print(json.dumps(result, ensure_ascii=False, indent=2))
+			return 0
+		except ValueError as e:
+			print(json.dumps({"error": str(e)}, ensure_ascii=False))
+			return 2
+		except Exception as e:
+			print(json.dumps({"error": str(e)}, ensure_ascii=False))
+			return 1
+	sp.set_defaults(func=_cmd_multiscale)
+
+	# Unified stats command (combines eval + analytics in simple format)
+	sp = sub.add_parser("multiscale-stats", parents=[parent], help="Get key statistics: quality, structure, performance, analytics")
+	sp.add_argument("tree_json", help="Path to RAPTOR tree JSON file")
+	sp.add_argument("--original-items", help="Path to original items JSONL (for evaluation)")
+	sp.add_argument("--model", help="Model for cost estimation (default: gpt-4o-mini)")
+	def _cmd_multiscale_stats(a: argparse.Namespace) -> int:
+		try:
+			import json
+			from multiscale import (
+				comprehensive_check, comprehensive_analytics,
+				RaptorTree, SummaryLevel
+			)
+			
+			# Load tree
+			with open(expand_abs(a.tree_json), "r", encoding="utf-8") as f:
+				tree_data = json.load(f)
+			
+			# Reconstruct tree
+			levels = [
+				SummaryLevel(level=l["level"], items=l["items"])
+				for l in tree_data.get("levels", [])
+			]
+			tree = RaptorTree(levels=levels, meta=tree_data.get("meta", {}))
+			
+			# Load original items if provided
+			original_items = None
+			if a.original_items:
+				original_items = []
+				with open(expand_abs(a.original_items), "r", encoding="utf-8") as f:
+					for line in f:
+						if line.strip():
+							original_items.append(json.loads(line))
+			
+			# Get comprehensive stats
+			result = comprehensive_check(tree, original_items=original_items, include_eval=True)
+			
+			# Add analytics
+			analytics = comprehensive_analytics(tree)
+			result["analytics"] = analytics
+			
+			print(json.dumps(result, ensure_ascii=False, indent=2))
+			return 0
+		except FileNotFoundError as e:
+			print(json.dumps({"error": f"File not found: {e}"}, ensure_ascii=False))
+			return 2
+		except json.JSONDecodeError as e:
+			print(json.dumps({"error": f"Invalid JSON: {e}"}, ensure_ascii=False))
+			return 2
+		except Exception as e:
+			print(json.dumps({"error": str(e)}, ensure_ascii=False))
+			return 1
+	sp.set_defaults(func=_cmd_multiscale_stats)
+
+	# Simple health check (default - easy to use)
+	sp = sub.add_parser("multiscale-check", parents=[parent], help="Quick health check with simple pass/fail results")
+	sp.add_argument("tree_json", help="Path to RAPTOR tree JSON file")
+	sp.add_argument("--original-items", help="Path to original items JSONL (for comparison)")
+	sp.add_argument("--full", action="store_true", help="Include full validation and evaluation")
+	def _cmd_multiscale_check(a: argparse.Namespace) -> int:
+		try:
+			import json
+			from multiscale import quick_check, comprehensive_check, load_tree
+			
+			# Load tree
+			tree = load_tree(expand_abs(a.tree_json))
+			
+			# Load original items if provided
+			original_items = None
+			if a.original_items:
+				original_items = []
+				with open(expand_abs(a.original_items), "r", encoding="utf-8") as f:
+					for line in f:
+						if line.strip():
+							original_items.append(json.loads(line))
+			
+			# Run check
+			if a.full:
+				result = comprehensive_check(tree, original_items=original_items, include_eval=True)
+			else:
+				health = quick_check(tree, original_items=original_items)
+				result = {"health": health.to_dict()}
+			
+			print(json.dumps(result, ensure_ascii=False, indent=2))
+			# Return non-zero if unhealthy
+			if "health" in result:
+				return 0 if result["health"].get("healthy", False) else 1
+			return 0
+		except FileNotFoundError as e:
+			print(json.dumps({"error": f"File not found: {e}"}, ensure_ascii=False))
+			return 2
+		except json.JSONDecodeError as e:
+			print(json.dumps({"error": f"Invalid JSON: {e}"}, ensure_ascii=False))
+			return 2
+		except Exception as e:
+			print(json.dumps({"error": str(e)}, ensure_ascii=False))
+			return 1
+	sp.set_defaults(func=_cmd_multiscale_check)
+
+	# Comprehensive validation (advanced - detailed issues)
+	sp = sub.add_parser("multiscale-validate", parents=[parent], help="[Advanced] Detailed validation with all issues")
+	sp.add_argument("tree_json", help="Path to RAPTOR tree JSON file")
+	sp.add_argument("--original-items", help="Path to original items JSONL (for comparison)")
+	sp.add_argument("--strict", action="store_true", help="Treat warnings as errors")
+	def _cmd_multiscale_validate(a: argparse.Namespace) -> int:
+		try:
+			import json
+			from multiscale import validate, RaptorTree, SummaryLevel
+			
+			# Load tree
+			with open(expand_abs(a.tree_json), "r", encoding="utf-8") as f:
+				tree_data = json.load(f)
+			
+			# Reconstruct tree
+			levels = [
+				SummaryLevel(level=l["level"], items=l["items"])
+				for l in tree_data.get("levels", [])
+			]
+			tree = RaptorTree(levels=levels, meta=tree_data.get("meta", {}))
+			
+			# Load original items if provided
+			original_items = None
+			if a.original_items:
+				original_items = []
+				with open(expand_abs(a.original_items), "r", encoding="utf-8") as f:
+					for line in f:
+						if line.strip():
+							original_items.append(json.loads(line))
+			
+			# Validate
+			report = validate(tree, original_items=original_items, strict=a.strict)
+			
+			print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+			return 0 if report.valid else 1
+		except FileNotFoundError as e:
+			print(json.dumps({"error": f"File not found: {e}"}, ensure_ascii=False))
+			return 2
+		except json.JSONDecodeError as e:
+			print(json.dumps({"error": f"Invalid JSON: {e}"}, ensure_ascii=False))
+			return 2
+		except Exception as e:
+			print(json.dumps({"error": str(e)}, ensure_ascii=False))
+			return 1
+	sp.set_defaults(func=_cmd_multiscale_validate)
+
+	# Analytics command
+	sp = sub.add_parser("multiscale-analytics", parents=[parent], help="Advanced analytics: distributions, correlations, clustering")
+	sp.add_argument("tree_json", help="Path to RAPTOR tree JSON file")
+	def _cmd_multiscale_analytics(a: argparse.Namespace) -> int:
+		try:
+			import json
+			from multiscale import comprehensive_analytics, load_tree
+			
+			tree = load_tree(expand_abs(a.tree_json))
+			analytics = comprehensive_analytics(tree)
+			
+			print(json.dumps(analytics, ensure_ascii=False, indent=2))
+			return 0
+		except FileNotFoundError as e:
+			print(json.dumps({"error": f"File not found: {e}"}, ensure_ascii=False))
+			return 2
+		except json.JSONDecodeError as e:
+			print(json.dumps({"error": f"Invalid JSON: {e}"}, ensure_ascii=False))
+			return 2
+		except Exception as e:
+			print(json.dumps({"error": str(e)}, ensure_ascii=False))
+			return 1
+	sp.set_defaults(func=_cmd_multiscale_analytics)
+
+	# Evaluation command
+	sp = sub.add_parser("multiscale-eval", parents=[parent], help="Detailed evaluation metrics: quality, structure, performance")
+	sp.add_argument("tree_json", help="Path to RAPTOR tree JSON file")
+	sp.add_argument("--original-items", help="Path to original items JSONL (for evaluation)")
+	sp.add_argument("--model", help="Model for cost estimation (default: gpt-4o-mini)")
+	def _cmd_multiscale_eval(a: argparse.Namespace) -> int:
+		try:
+			import json
+			from multiscale import evaluate, load_tree, RaptorTree, SummaryLevel
+			
+			# Load tree
+			tree = load_tree(expand_abs(a.tree_json))
+			
+			# Load original items if provided
+			original_items = None
+			if a.original_items:
+				original_items = []
+				with open(expand_abs(a.original_items), "r", encoding="utf-8") as f:
+					for line in f:
+						if line.strip():
+							original_items.append(json.loads(line))
+			
+			model = a.model or "gpt-4o-mini"
+			report = evaluate(original_items, tree, model=model)
+			
+			print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+			return 0
+		except FileNotFoundError as e:
+			print(json.dumps({"error": f"File not found: {e}"}, ensure_ascii=False))
+			return 2
+		except json.JSONDecodeError as e:
+			print(json.dumps({"error": f"Invalid JSON: {e}"}, ensure_ascii=False))
+			return 2
+		except Exception as e:
+			print(json.dumps({"error": str(e)}, ensure_ascii=False))
+			return 1
+	sp.set_defaults(func=_cmd_multiscale_eval)
+
+	# Tree utilities
+	sp = sub.add_parser("multiscale-tree", parents=[parent], help="Tree utilities: stats, search, format, root summary")
+	sp.add_argument("tree_json", help="Path to RAPTOR tree JSON file")
+	sp.add_argument("--stats", action="store_true", help="Show tree statistics")
+	sp.add_argument("--root", action="store_true", help="Show root-level summary")
+	sp.add_argument("--level", type=int, help="Show summary at specific level")
+	sp.add_argument("--search", help="Search for text in tree")
+	sp.add_argument("--format", action="store_true", help="Format tree as readable text")
+	def _cmd_multiscale_tree(a: argparse.Namespace) -> int:
+		try:
+			import json
+			from multiscale import (
+				load_tree, get_tree_stats, get_root_summary,
+				get_summary_at_level, search_tree, format_tree_summary
+			)
+			
+			# Load tree
+			tree = load_tree(expand_abs(a.tree_json))
+			
+			result = {}
+			
+			if a.stats:
+				result["stats"] = get_tree_stats(tree)
+			
+			if a.root:
+				summary = get_root_summary(tree)
+				result["root_summary"] = summary
+			
+			if a.level is not None:
+				summary = get_summary_at_level(tree, a.level)
+				result[f"level_{a.level}_summary"] = summary
+			
+			if a.search:
+				matches = search_tree(tree, a.search)
+				result["search_results"] = {
+					"query": a.search,
+					"count": len(matches),
+					"matches": matches[:10],  # Limit to 10
+				}
+			
+			if a.format:
+				result["formatted"] = format_tree_summary(tree)
+			
+			# If no specific action, show stats
+			if not any([a.stats, a.root, a.level is not None, a.search, a.format]):
+				result["stats"] = get_tree_stats(tree)
+			
+			print(json.dumps(result, ensure_ascii=False, indent=2))
+			return 0
+		except FileNotFoundError as e:
+			print(json.dumps({"error": f"File not found: {e}"}, ensure_ascii=False))
+			return 2
+		except json.JSONDecodeError as e:
+			print(json.dumps({"error": f"Invalid JSON: {e}"}, ensure_ascii=False))
+			return 2
+		except Exception as e:
+			print(json.dumps({"error": str(e)}, ensure_ascii=False))
+			return 1
+	sp.set_defaults(func=_cmd_multiscale_tree)
+
+	# High-level query commands
+	sp = sub.add_parser("find-solution", parents=[parent], help="Find past solutions to a problem (high-level wrapper, cached)")
+	sp.add_argument("query", help="What problem are you trying to solve?")
+	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
+	sp.add_argument("--vec-db", help="Path to vector DB (defaults to CURSOR_VEC_DB or ./cursor_vec.db)")
+	sp.add_argument("--k", type=int, default=10, help="Number of results to return (default: 10)")
+	sp.add_argument("--no-auto-index", action="store_true", help="Don't auto-create indexes if missing")
+	sp.add_argument("--no-cache", action="store_true", help="Don't use cache (force fresh search)")
+	sp.set_defaults(func=lambda a: print(json.dumps(memmod.find_solution(
+		a.query,
+		index_jsonl=a.index_jsonl,
+		vec_db=a.vec_db,
+		db_path=a.db,
+		k=a.k,
+		auto_index=not a.no_auto_index,
+		use_cache=not a.no_cache,
+	), ensure_ascii=False, indent=2)))
+	
+	sp = sub.add_parser("remember", parents=[parent], help="Help recall forgotten things from chat history (cached)")
+	sp.add_argument("query", help="What are you trying to remember?")
+	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
+	sp.add_argument("--vec-db", help="Path to vector DB (defaults to CURSOR_VEC_DB or ./cursor_vec.db)")
+	sp.add_argument("--k", type=int, default=5, help="Number of results to return (default: 5)")
+	sp.add_argument("--no-auto-index", action="store_true", help="Don't auto-create indexes if missing")
+	sp.add_argument("--no-llm", action="store_true", help="Don't use LLM for memory summary (faster, no summarization)")
+	sp.add_argument("--model", help="LLM model for summarization (default: from env or gpt-4o-mini)")
+	sp.set_defaults(func=lambda a: print(json.dumps(memmod.remember(
+		a.query,
+		index_jsonl=a.index_jsonl,
+		vec_db=a.vec_db,
+		db_path=a.db,
+		k=a.k,
+		auto_index=not a.no_auto_index,
+		use_llm=not a.no_llm,
+		model=a.model,
+	), ensure_ascii=False, indent=2)))
+	
+	sp = sub.add_parser("design-coherence", parents=[parent], help="Find and organize scattered design plans/wants (cached)")
+	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
+	sp.add_argument("--vec-db", help="Path to vector DB (defaults to CURSOR_VEC_DB or ./cursor_vec.db)")
+	sp.add_argument("--topics", action="append", help="Specific topics to search for (repeatable, e.g., --topics auth --topics api)")
+	sp.add_argument("--no-auto-index", action="store_true", help="Don't auto-create indexes if missing")
+	sp.add_argument("--no-llm", action="store_true", help="Don't use LLM for coherence summary (faster, no summarization)")
+	sp.add_argument("--model", help="LLM model for summarization (default: from env or gpt-4o-mini)")
+	sp.set_defaults(func=lambda a: print(json.dumps(memmod.find_design_plans(
+		index_jsonl=a.index_jsonl,
+		vec_db=a.vec_db,
+		db_path=a.db,
+		topics=a.topics,
+		auto_index=not a.no_auto_index,
+		use_llm=not a.no_llm,
+		model=a.model,
+	), ensure_ascii=False, indent=2)))
+	
+	sp = sub.add_parser("ensure-indexed", parents=[parent], help="Ensure indexes exist, creating them if needed (idempotent)")
+	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
+	sp.add_argument("--vec-db", help="Path to vector DB (defaults to CURSOR_VEC_DB or ./cursor_vec.db)")
+	sp.add_argument("--force", action="store_true", help="Force re-indexing even if indexes exist")
+	sp.set_defaults(func=lambda a: print(json.dumps(memmod.ensure_indexed(
+		index_jsonl=a.index_jsonl,
+		vec_db=a.vec_db,
+		db_path=a.db,
+		force=a.force,
+	), ensure_ascii=False, indent=2)))
+	
+	sp = sub.add_parser("cache-stats", parents=[parent], help="Show cache statistics")
+	sp.set_defaults(func=lambda a: print(json.dumps({
+		"cache_count": llm_cache.count(),
+		"cache_path": os.getenv("LLM_CACHE_PATH", "llm_cache.sqlite"),
+	}, ensure_ascii=False, indent=2)))
+	
+	sp = sub.add_parser("cache-clear", parents=[parent], help="Clear LLM cache")
+	sp.set_defaults(func=lambda a: (llm_cache.clear(), print(json.dumps({"cleared": True}, ensure_ascii=False))))
 
 	return p
 

@@ -7,7 +7,7 @@ import re
 from . import db as dbmod
 from . import parser as parsermod
 from .paths import default_db_path
-import llm_helpers as llmmod
+import llm_utils as llmmod
 from . import index as indexmod
 from .paths import expand_abs
 

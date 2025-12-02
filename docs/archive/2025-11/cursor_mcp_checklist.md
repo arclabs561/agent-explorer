@@ -1,6 +1,6 @@
 # Cursor MCP Integration Checklist
 
-## Pre-Flight Checks ✅
+## Pre-Flight Checks 
 
 - [x] MCP config file exists: `~/.cursor/mcp.json`
 - [x] skill-mcp configured in MCP config
@@ -10,7 +10,7 @@
 - [x] All scripts are executable
 - [x] MCP server can start (tested manually)
 
-## Cursor-Specific Configuration ✅
+## Cursor-Specific Configuration 
 
 - [x] Using stdio transport (default, optimal for Cursor)
 - [x] Using `uvx` for package management (fast, cached)
@@ -70,11 +70,11 @@ If something doesn't work:
 
 ## Success Criteria
 
-✅ All 5 validation steps pass
-✅ Claude can discover and use skills
-✅ Scripts execute and return results
-✅ No errors in Cursor's UI
-✅ Skills work as expected
+ All 5 validation steps pass
+ Claude can discover and use skills
+ Scripts execute and return results
+ No errors in Cursor's UI
+ Skills work as expected
 
 ## Next Steps After Validation
 

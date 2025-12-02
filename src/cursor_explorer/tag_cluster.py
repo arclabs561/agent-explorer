@@ -4,7 +4,7 @@ import json
 import os
 from typing import Dict, List, Tuple
 
-import llm_helpers as llmmod
+import llm_utils as llmmod
 from .paths import expand_abs
 from .embeddings import l2_normalize
 

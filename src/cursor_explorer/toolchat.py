@@ -5,7 +5,7 @@ import os
 from typing import Dict, List, Any, Optional
 import tempfile
 
-import llm_helpers as llmmod
+import llm_utils as llmmod
 from . import index as indexmod
 from . import db as dbmod
 from . import parser as parsermod

@@ -157,8 +157,10 @@ def annotate_conversation_scales(pairs: List[Dict]) -> Dict:
 	# Micro: per-turn heads
 	micro = []
 	for p in pairs[:10]:
-		user_head = (p.get("user") or "").splitlines()[0][:120]
-		assistant_head = (p.get("assistant") or "").splitlines()[0][:160]
+		user_lines = (p.get("user") or "").splitlines()
+		user_head = user_lines[0][:120] if user_lines else ""
+		assistant_lines = (p.get("assistant") or "").splitlines()
+		assistant_head = assistant_lines[0][:160] if assistant_lines else ""
 		micro.append({"turn": p.get("turn_index"), "user_head": user_head, "assistant_head": assistant_head})
 
 	# Meso: milestones (assistant imperative cues)

@@ -6,7 +6,7 @@ import re
 from typing import Dict, List, Optional, Tuple
 
 from .paths import expand_abs
-import llm_helpers as llmmod
+import llm_utils as llmmod
 
 
 _STOP = {

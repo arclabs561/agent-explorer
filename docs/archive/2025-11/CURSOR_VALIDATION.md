@@ -4,14 +4,14 @@
 
 You're right to question this - **we can't fully validate MCP integration without actually testing it in Cursor**. Here's what we've validated and what you need to test:
 
-## What We've Validated ✅
+## What We've Validated 
 
 1. **File Structure**: All skill files exist and are correct
 2. **Script Functionality**: Scripts work when run directly
 3. **MCP Configuration**: Config file is correct
 4. **MCP Tools (Direct)**: We can call the tools directly (but that's not the same as Cursor using them)
 
-## What We CAN'T Validate Without Cursor ❌
+## What We CAN'T Validate Without Cursor 
 
 1. **Cursor's MCP Server Connection**: Does Cursor actually connect to skill-mcp?
 2. **Tool Availability in Cursor**: Can Claude see the skill-mcp tools?
@@ -55,20 +55,20 @@ Try these in Cursor's chat (in order of complexity):
 ## What Success Looks Like
 
 If Claude can:
-- ✅ See and list the git-workflow skill
-- ✅ Read skill files
-- ✅ Execute skill scripts
-- ✅ Return actual results from script execution
+-  See and list the git-workflow skill
+-  Read skill files
+-  Execute skill scripts
+-  Return actual results from script execution
 
 Then **everything is working!**
 
 ## What Failure Looks Like
 
 If Claude:
-- ❌ Says "I don't have access to skill-mcp tools"
-- ❌ Can't find any skills
-- ❌ Can't execute scripts
-- ❌ Shows MCP connection errors
+-  Says "I don't have access to skill-mcp tools"
+-  Can't find any skills
+-  Can't execute scripts
+-  Shows MCP connection errors
 
 Then we need to troubleshoot.
 
@@ -133,5 +133,5 @@ You: "Run branch_list.py from git-workflow with --json"
 Claude: [Should execute and return branch data]
 ```
 
-If all three work, **you're golden!** ✅
+If all three work, **you're golden!** 
 

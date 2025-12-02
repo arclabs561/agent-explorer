@@ -1,22 +1,22 @@
 # Security Review & Publishing Recommendations
 
-## 🔴 Red Team Security Review
+##  Red Team Security Review
 
 ### Files Created/Modified in This Session
 
-1. **REPO_CLEANUP_PLAN.md** - ✅ Safe (no secrets)
-2. **VALIDATION_REPORT.md** - ✅ Safe (no secrets)
-3. **NAMING_RECOMMENDATIONS.md** - ✅ Safe (no secrets)
-4. **SECURITY_REVIEW.md** - ✅ Safe (this file)
-5. **data/README.md** - ✅ Safe (documentation)
-6. **cognee-storage/README.md** - ✅ Safe (documentation)
-7. **docs/archive/2025-11/README.md** - ✅ Safe (documentation)
-8. **.gitignore** - ✅ Safe (patterns only)
+1. **REPO_CLEANUP_PLAN.md** -  Safe (no secrets)
+2. **VALIDATION_REPORT.md** -  Safe (no secrets)
+3. **NAMING_RECOMMENDATIONS.md** -  Safe (no secrets)
+4. **SECURITY_REVIEW.md** -  Safe (this file)
+5. **data/README.md** -  Safe (documentation)
+6. **cognee-storage/README.md** -  Safe (documentation)
+7. **docs/archive/2025-11/README.md** -  Safe (documentation)
+8. **.gitignore** -  Safe (patterns only)
 
-### ⚠️ Files with Personal Information
+###  Files with Personal Information
 
 #### 1. dotfiles/home/.gitconfig
-**Status**: ⚠️ **CONTAINS PERSONAL INFO**
+**Status**:  **CONTAINS PERSONAL INFO**
 - Email: `henry@henrywallace.io`
 - Name: `Henry Wallace`
 - Absolute path: `/Users/arc/Documents/dev/devdev/dotfiles/misc/git-hooks`
@@ -24,12 +24,12 @@
 
 **Action Required**:
 - **DO NOT PUBLISH** as-is
-- ✅ Template created: `.gitconfig.example`
+-  Template created: `.gitconfig.example`
 - Remove personal info from template
 - Document that users should copy and customize
 
 #### 2. dotfiles/misc/systemd/user/up.service*
-**Status**: ⚠️ **CONTAINS HARDCODED PATHS**
+**Status**:  **CONTAINS HARDCODED PATHS**
 - `/home/henrywallace/go/bin/notify`
 - `/home/henrywallace/bin/upd`
 
@@ -38,7 +38,7 @@
 - Or exclude from public dotfiles repo
 
 #### 3. bin/gp
-**Status**: ⚠️ **CONTAINS PERSONAL DOMAIN**
+**Status**:  **CONTAINS PERSONAL DOMAIN**
 - `https://henrywallace.io`
 
 **Action Required**:
@@ -46,7 +46,7 @@
 - Or exclude from public repo
 
 #### 4. bin/rmount
-**Status**: ⚠️ **CONTAINS HARDCODED PATH**
+**Status**:  **CONTAINS HARDCODED PATH**
 - `/home/henrywallace/mnt/`
 
 **Action Required**:
@@ -54,12 +54,12 @@
 - Or exclude from public repo
 
 #### 5. data/*.jsonl files
-**Status**: ✅ **SAFE** (gitignored)
+**Status**:  **SAFE** (gitignored)
 - Contains email in chat data, but `data/` is gitignored
 - No action needed
 
 #### 2. dotfiles/home/.pathrc
-**Status**: ⚠️ **CONTAINS PATHS**
+**Status**:  **CONTAINS PATHS**
 - Contains `$HOME` paths (OK, portable)
 - No absolute paths found
 - **May be safe** but review for personal paths
@@ -69,7 +69,7 @@
 - Ensure all paths use `$HOME` or environment variables
 
 #### 3. dotfiles/home/.zshrc
-**Status**: ⚠️ **REVIEW NEEDED**
+**Status**:  **REVIEW NEEDED**
 - Previously had hardcoded `/Users/henry/` paths (fixed)
 - May contain other personal configurations
 
@@ -77,7 +77,7 @@
 - Review for any remaining personal paths or configs
 - Ensure all paths are portable
 
-### ✅ Safe to Publish
+###  Safe to Publish
 
 - `REPO_CLEANUP_PLAN.md`
 - `VALIDATION_REPORT.md`
@@ -91,7 +91,7 @@
 
 ## 📦 Publishing Recommendations
 
-### cursor_explorer - ✅ SHOULD BE PUBLISHED
+### cursor_explorer -  SHOULD BE PUBLISHED
 
 **Status**: Ready for publication with minor cleanup
 
@@ -119,7 +119,7 @@
 - [ ] Verify `.gitignore` is comprehensive
 - [ ] Test that sensitive files are ignored
 
-### dotfiles - ⚠️ EXISTING REPO: github.com/arclabs561/dotfiles
+### dotfiles -  EXISTING REPO: github.com/arclabs561/dotfiles
 
 **Status**: Repository already exists on GitHub
 
@@ -140,7 +140,7 @@
    - Personal configurations
 
 **Action Plan**:
-1. ✅ Template created: `.gitconfig.example`
+1.  Template created: `.gitconfig.example`
 2. Verify remote repo privacy status
 3. Sync local dotfiles/ with remote repo (if needed)
 4. Ensure personal info is appropriate for repo visibility
@@ -209,7 +209,7 @@ git gc --prune=now --aggressive
    - Or fresh start in separate private repo
    - Sanitize before any public sharing
 
-## 🛡️ Security Checklist
+## 🛡 Security Checklist
 
 ### Before Publishing cursor_explorer
 
@@ -232,7 +232,7 @@ git gc --prune=now --aggressive
 - [ ] All paths use variables (`$HOME`, etc.)
 - [ ] Create `.example` templates for sensitive files
 
-## 📝 Next Steps
+##  Next Steps
 
 1. **Immediate**: 
    - Verify `github.com/arclabs561/dotfiles` privacy status

@@ -1,6 +1,6 @@
 # Repository Validation Report
 
-## ✅ Completed Cleanup
+##  Completed Cleanup
 
 ### Files Archived (Not Deleted)
 - **22 data files** → `data/` (JSONL, JSON, DB files)
@@ -11,7 +11,7 @@
 - `.gitignore` now includes `data/`, `logs/`, `*.db`, `*.sqlite`, `*.log`
 - Archive directories created with README files
 
-## ✅ Verified Working
+##  Verified Working
 
 1. **Dotfiles Setup**
    - `dotfiles/setup` script syntax valid
@@ -23,7 +23,7 @@
    - Archive directories properly created
    - Root directory cleaned
 
-## 📋 Findings & Recommendations
+##  Findings & Recommendations
 
 ### 1. cognee/ Submodule (1.8GB)
 
@@ -79,19 +79,19 @@
 ## 🔍 Additional Validation
 
 ### Root Directory Files
-- ✅ No remaining data files (*.jsonl, *.json, *.db, *.sqlite)
-- ✅ No remaining validation docs in root
-- ✅ Clean structure
+-  No remaining data files (*.jsonl, *.json, *.db, *.sqlite)
+-  No remaining validation docs in root
+-  Clean structure
 
 ### Scripts & Tools
-- ✅ `dotfiles/setup` works correctly
-- ✅ `just` recipes functional
-- ✅ All scripts in `bin/` accessible via symlink
+-  `dotfiles/setup` works correctly
+-  `just` recipes functional
+-  All scripts in `bin/` accessible via symlink
 
 ### Archive Integrity
-- ✅ All files preserved (not deleted)
-- ✅ README files created in archive locations
-- ✅ Proper organization by type
+-  All files preserved (not deleted)
+-  README files created in archive locations
+-  Proper organization by type
 
 ## ❓ Questions to Resolve
 
@@ -107,12 +107,12 @@
 
 ## 📊 Summary
 
-**Cleanup Status**: ✅ Complete
+**Cleanup Status**:  Complete
 - All files archived (not deleted)
 - Root directory clean
 - Configuration updated
 
-**Organization Status**: ⚠️ Needs Decision
+**Organization Status**:  Needs Decision
 - cognee/ submodule needs documentation or removal
 - Repository structure could be clearer (split vs. document)
 

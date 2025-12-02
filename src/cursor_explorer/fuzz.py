@@ -8,7 +8,7 @@ from . import adversary as adversarymod
 from . import annotate as annotatemod
 from . import trace as tracemod
 # pyd_models removed - using dicts directly
-import llm_helpers as llmmod
+import llm_utils as llmmod
 
 
 def _score_variant(annotations: Dict) -> float:

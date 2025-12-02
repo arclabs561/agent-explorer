@@ -7,9 +7,9 @@ Based on your existing MCP configuration, here are Cursor-specific patterns and 
 ## Current Configuration Analysis
 
 Your `~/.cursor/mcp.json` shows:
-- ✅ **stdio transport** (default) - Used by most servers
-- ✅ **Environment variables** - Used by firecrawl, magic, Snyk
-- ✅ **Cursor-specific env vars** - `IDE_CONFIG_PATH` for Snyk
+-  **stdio transport** (default) - Used by most servers
+-  **Environment variables** - Used by firecrawl, magic, Snyk
+-  **Cursor-specific env vars** - `IDE_CONFIG_PATH` for Snyk
 
 ## Cursor-Specific Optimizations
 
@@ -115,9 +115,9 @@ Cursor may show MCP errors in its UI. To help debugging:
 
 Cursor shows skill names in its UI. Use clear, descriptive names:
 
-- ✅ `git-workflow` - Clear and descriptive
-- ❌ `gw` - Too cryptic
-- ❌ `git_workflow_automation_tool` - Too long
+-  `git-workflow` - Clear and descriptive
+-  `gw` - Too cryptic
+-  `git_workflow_automation_tool` - Too long
 
 ### 2. Skill Descriptions
 
@@ -206,9 +206,9 @@ Should list skill-mcp tools if connected.
 ### Startup Time
 
 Cursor loads MCP servers on startup. skill-mcp should be fast because:
-- ✅ Uses `uvx` (cached packages)
-- ✅ No heavy initialization
-- ✅ Simple stdio transport
+-  Uses `uvx` (cached packages)
+-  No heavy initialization
+-  Simple stdio transport
 
 ### Tool Discovery
 
@@ -306,11 +306,11 @@ After restarting Cursor, test with these prompts:
 ### Expected Behavior
 
 When working correctly:
-- ✅ Claude can discover skills
-- ✅ Claude can read skill files
-- ✅ Claude can execute skill scripts
-- ✅ Results are returned correctly
-- ✅ No errors in Cursor's UI
+-  Claude can discover skills
+-  Claude can read skill files
+-  Claude can execute skill scripts
+-  Results are returned correctly
+-  No errors in Cursor's UI
 
 ## Troubleshooting
 

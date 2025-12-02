@@ -1,9 +1,0 @@
-#!/bin/bash
-
-rsync \
-	--info=progress2 \
-	--recursive \
-	--archive \
-	--partial \
-	--append-verify \
-	--one-file-system

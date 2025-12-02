@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import sys
 from typing import Dict, Iterable, List, Optional
 
 from . import db as dbmod
@@ -10,7 +11,47 @@ from . import parser as parsermod
 from . import rag as ragmod
 from .paths import expand_abs, default_db_path
 from .embeddings import l2_normalize
-import llm_helpers as llmmod
+import llm_utils as llmmod
+
+
+def _load_sqlite_vec(conn) -> None:
+	"""Load sqlite-vec extension with helpful error messages.
+	
+	Raises RuntimeError with installation instructions if extension cannot be loaded.
+	"""
+	try:
+		import sqlite_vec  # type: ignore
+		sqlite_vec.load(conn)
+		return
+	except ImportError:
+		pass
+	except Exception as e:
+		# sqlite_vec package exists but failed to load
+		raise RuntimeError(
+			f"sqlite-vec package loaded but failed to initialize: {e}\n"
+			"Try: pip install sqlite-vec or uv pip install sqlite-vec"
+		) from e
+	
+	# Fallback to extension names
+	try:
+		conn.load_extension("vec0")
+		return
+	except Exception:
+		pass
+	
+	try:
+		conn.load_extension("sqlite-vec")
+		return
+	except Exception as e:
+		raise RuntimeError(
+			"sqlite-vec extension not found. Install it with:\n"
+			"  pip install sqlite-vec\n"
+			"  or\n"
+			"  uv pip install sqlite-vec\n"
+			"\n"
+			"Alternatively, use sparse search mode instead of vector search.\n"
+			f"Original error: {e}"
+		) from e
 
 
 def _composer_ids(conn) -> Iterable[str]:
@@ -130,15 +171,7 @@ def build_embeddings_sqlite(db_path: str, index_path: str, table: str = "vec_ind
 
 	conn = sqlite3.connect(expand_abs(db_path))
 	conn.enable_load_extension(True)
-	# Load sqlite-vec via python package if present, else fall back to extension names
-	try:
-		import sqlite_vec  # type: ignore
-		sqlite_vec.load(conn)
-	except Exception:
-		try:
-			conn.load_extension("vec0")
-		except Exception:
-			conn.load_extension("sqlite-vec")
+	_load_sqlite_vec(conn)
 
 	c = conn.cursor()
 	# Determine embedding dimension dynamically from the selected model, cached in a side table
@@ -279,14 +312,7 @@ def vec_search(db_path: str, index_table: str, query: str, top_k: int = 10) -> L
 
 	conn = sqlite3.connect(expand_abs(db_path))
 	conn.enable_load_extension(True)
-	try:
-		import sqlite_vec  # type: ignore
-		sqlite_vec.load(conn)
-	except Exception:
-		try:
-			conn.load_extension("vec0")
-		except Exception:
-			conn.load_extension("sqlite-vec")
+	_load_sqlite_vec(conn)
 
 	client = llmmod.require_client()
 	model = os.getenv("OPENAI_EMBED_MODEL", os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"))
@@ -483,15 +509,7 @@ def build_embeddings_sqlite_from_items(
 
 	conn = sqlite3.connect(expand_abs(db_path))
 	conn.enable_load_extension(True)
-	# Load sqlite-vec
-	try:
-		import sqlite_vec  # type: ignore
-		sqlite_vec.load(conn)
-	except Exception:
-		try:
-			conn.load_extension("vec0")
-		except Exception:
-			conn.load_extension("sqlite-vec")
+	_load_sqlite_vec(conn)
 
 	c = conn.cursor()
 	# Ensure items table exists

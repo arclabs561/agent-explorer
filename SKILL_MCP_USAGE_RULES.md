@@ -36,27 +36,27 @@ User Request
 ## Rules
 
 ### Rule 1: Skills are for Composition
-- ✅ Use skills for workflows that compose multiple operations
-- ❌ Don't use skills for single, simple commands
+-  Use skills for workflows that compose multiple operations
+-  Don't use skills for single, simple commands
 
 ### Rule 2: Always Validate
-- ✅ Check skill exists with `list_skills` before use
-- ✅ Verify script path with `get_skill_details`
-- ❌ Don't assume skills/scripts exist
+-  Check skill exists with `list_skills` before use
+-  Verify script path with `get_skill_details`
+-  Don't assume skills/scripts exist
 
 ### Rule 3: Use Right Tool for Job
-- ✅ Simple operations → `run_terminal_cmd`
-- ✅ Skill workflows → `run_skill_script`
-- ✅ File operations → `read_file`/`write_file`
+-  Simple operations → `run_terminal_cmd`
+-  Skill workflows → `run_skill_script`
+-  File operations → `read_file`/`write_file`
 
 ### Rule 4: Error Handling
-- ✅ Always handle errors gracefully
-- ✅ Provide helpful error messages
-- ✅ Suggest alternatives when tools fail
+-  Always handle errors gracefully
+-  Provide helpful error messages
+-  Suggest alternatives when tools fail
 
 ## Examples
 
-### ✅ Correct Usage
+###  Correct Usage
 
 **User:** "List all available skills"
 ```python
@@ -84,7 +84,7 @@ result = run_skill_script(
 # This is a composed workflow - correct use
 ```
 
-### ❌ Incorrect Usage
+###  Incorrect Usage
 
 **User:** "What's my current git branch?"
 ```python
