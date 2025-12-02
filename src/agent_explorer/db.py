@@ -64,6 +64,10 @@ def table_info(conn: sqlite3.Connection, table_name: str) -> List[str]:
 	Returns:
 		List of column names
 	"""
+	import re
+	# Validate table name to prevent SQL injection
+	if not re.fullmatch(r"[A-Za-z0-9_]+", table_name):
+		raise ValueError(f"Invalid table name: {table_name}")
 	c = conn.cursor()
 	c.execute(f"PRAGMA table_info({table_name})")
 	return [row[1] for row in c.fetchall()]
@@ -106,6 +110,8 @@ def kv_keys(
 	query += " ORDER BY key"
 
 	if limit:
+		if limit < 0:
+			raise ValueError(f"Limit must be non-negative, got {limit}")
 		query += f" LIMIT {limit}"
 
 	c.execute(query, params)
@@ -166,6 +172,8 @@ def search_kv(
 	query += " ORDER BY key"
 
 	if limit:
+		if limit < 0:
+			raise ValueError(f"Limit must be non-negative, got {limit}")
 		query += f" LIMIT {limit}"
 
 	c.execute(query, params)

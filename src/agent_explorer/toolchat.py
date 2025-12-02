@@ -18,13 +18,15 @@ from . import cluster as clustermod
 
 
 def _default_index_path() -> str:
-	# Support generic AGENT_* vars, fall back to CURSOR_* for backward compat
-	return expand_abs(os.getenv("AGENT_INDEX_JSONL") or os.getenv("CURSOR_INDEX_JSONL", "./cursor_index.jsonl"))
+	"""Get default index JSONL path (centralized)."""
+	from . import env as envmod
+	return envmod.get_index_jsonl_path()
 
 
 def _default_vec_db_path() -> str:
-	# Support generic AGENT_* vars, fall back to CURSOR_* for backward compat
-	return expand_abs(os.getenv("AGENT_VEC_DB") or os.getenv("CURSOR_VEC_DB", "./cursor_vec.db"))
+	"""Get default vector DB path (centralized)."""
+	from . import env as envmod
+	return envmod.get_vec_db_path()
 
 
 def get_tools_schema() -> List[Dict[str, Any]]:
@@ -289,15 +291,18 @@ def _tool_list_chats(args: Dict[str, Any]) -> Dict[str, Any]:
 	for k in dbmod.composer_data_keys(conn, limit=limit):
 		try:
 			cid = k.split(":", 1)[1]
-		except Exception:
+		except (IndexError, AttributeError):
+			# Key format unexpected, use whole key as ID
 			cid = k
 		title = ""
 		val = dbmod.kv_value(conn, k)
 		if val is not None:
 			try:
-				obj = json.loads(val.decode("utf-8") if isinstance(val, (bytes, bytearray)) else str(val))
+				val_str = val.decode("utf-8") if isinstance(val, (bytes, bytearray)) else str(val)
+				obj = json.loads(val_str)
 				title = obj.get("title") or obj.get("name") or obj.get("id") or ""
-			except Exception:
+			except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+				# Invalid JSON or encoding - skip title extraction
 				pass
 		out.append({"composer_id": cid, "title": title})
 	try:
@@ -364,14 +369,91 @@ def _tool_vec_db_search(args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _tool_hybrid_search(args: Dict[str, Any]) -> Dict[str, Any]:
+	"""Hybrid search combining vector and sparse results using rank-fusion."""
 	query = args.get("query", "")
 	idx = expand_abs(args.get("index_jsonl") or _default_index_path())
 	db = expand_abs(args.get("db") or _default_vec_db_path())
 	table = args.get("table") or "vec_index"
 	k = int(args.get("k", 8))
-	sp = indexmod.search_index(idx, query, k=k)
-	vec = indexmod.vec_search(db, table, query, top_k=k)
-	# merge by id
+	
+	# Get results from both sources
+	sp = indexmod.search_index(idx, query, k=k * 2)  # Get more for fusion
+	vec = []
+	try:
+		vec = indexmod.vec_search(db, table, query, top_k=k * 2)  # Get more for fusion
+	except Exception:
+		pass
+	
+	# Use rank-fusion if both sources available and library is installed
+	if sp and vec:
+		try:
+			import rank_fusion
+			
+			# Convert to rank-fusion format
+			sparse_ranks = []
+			for r in sp:
+				cid = r.get("composer_id", "")
+				tix = r.get("turn_index", 0)
+				item_id = f"{cid}:{tix}"
+				score = float(r.get("score", 0))
+				# Normalize sparse score to 0-1
+				normalized_score = min(1.0, score / 100.0) if score > 0 else 0.0
+				sparse_ranks.append((item_id, normalized_score))
+			
+			vector_ranks = []
+			for r in vec:
+				item_id = r.get("id") or f"{r.get('composer_id')}:{r.get('turn_index')}"
+				distance = r.get("distance", 1.0)
+				# Convert distance to similarity (higher is better)
+				score = max(0.0, 1.0 - distance)
+				vector_ranks.append((item_id, score))
+			
+			# Fuse using RRF
+			if sparse_ranks and vector_ranks:
+				fused = rank_fusion.rrf(sparse_ranks, vector_ranks, k=k * 2)
+				
+				# Map back to full results
+				all_results_by_id: Dict[str, Dict] = {}
+				for r in sp:
+					cid = r.get("composer_id", "")
+					tix = r.get("turn_index", 0)
+					item_id = f"{cid}:{tix}"
+					all_results_by_id[item_id] = {
+						"id": item_id,
+						"composer_id": cid,
+						"turn_index": tix,
+						"user_head": r.get("user_head"),
+						"assistant_head": r.get("assistant_head"),
+						"sparse_score": r.get("score"),
+					}
+				for r in vec:
+					item_id = r.get("id") or f"{r.get('composer_id')}:{r.get('turn_index')}"
+					if item_id not in all_results_by_id:
+						all_results_by_id[item_id] = {
+							"id": item_id,
+							"composer_id": r.get("composer_id"),
+							"turn_index": r.get("turn_index"),
+							"user_head": r.get("user_head"),
+							"assistant_head": r.get("assistant_head"),
+						}
+					all_results_by_id[item_id]["vec_distance"] = r.get("distance")
+				
+				# Build results from fused ranking
+				items = []
+				for item_id, fused_score in fused[:k]:
+					if item_id in all_results_by_id:
+						r = all_results_by_id[item_id].copy()
+						r["fused_score"] = fused_score
+						items.append(r)
+				
+				return {"items": items, "method": "fusion"}
+		except ImportError:
+			# rank-fusion not available: fall back to simple merge
+			pass
+		except Exception:
+			pass
+	
+	# Fallback: simple merge by ID (original behavior)
 	merged: Dict[str, Dict[str, Any]] = {}
 	for r in sp:
 		idv = f"{r.get('composer_id')}:{r.get('turn_index')}"
@@ -381,8 +463,8 @@ def _tool_hybrid_search(args: Dict[str, Any]) -> Dict[str, Any]:
 		m = merged.get(idv) or {"id": idv, "composer_id": r.get("composer_id"), "turn_index": r.get("turn_index"), "user_head": r.get("user_head"), "assistant_head": r.get("assistant_head")}
 		m["vec_distance"] = r.get("distance")
 		merged[idv] = m
-	items = list(merged.values())
-	return {"items": items}
+	items = list(merged.values())[:k]  # Limit to k
+	return {"items": items, "method": "merge"}
 
 
 def _tool_review_chat(args: Dict[str, Any]) -> Dict[str, Any]:

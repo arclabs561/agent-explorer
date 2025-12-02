@@ -24,6 +24,7 @@ cursor_items.db
 # Logs
 logs/
 *.log
+test_log.log
 
 # Snyk Security Extension - AI Rules (auto-generated)
 .cursor/rules/snyk_rules.mdc
@@ -54,3 +55,4 @@ TIDY_AND_TEST_REPORT.md
 
 # Archive directory (historical documents, not for tracking)
 docs/archive/
+*.md.bak

@@ -1,6 +1,6 @@
 # Agent Explorer
 
-CLI tool for exploring and analyzing AI agent chat data (Cursor, Cline, Aider, etc.).
+CLI tool for exploring AI agent chat data.
 
 ## Install
 
@@ -8,73 +8,67 @@ CLI tool for exploring and analyzing AI agent chat data (Cursor, Cline, Aider, e
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync --all-extras --dev
 uv pip install git+https://github.com/arclabs561/multiscale.git
-uv pip install -e ../llm-helpers  # Or publish llm-helpers first
+uv pip install -e ../llm-helpers
+```
+
+Optional: rank-fusion and rank-refine (not on PyPI):
+```bash
+uv pip install -e ../rank-fusion/rank-fusion-python
+uv pip install -e ../rank-refine/rank-refine-python
 ```
 
 ## Usage
 
-### Basic exploration
-
 ```bash
-# List conversations
-uv run agent-explorer chats
-
-# Show a conversation
-uv run agent-explorer convo <composer_id>
-
-# Search chat history
-uv run agent-explorer find-solution "python error handling" --k 5
-
-# Recall forgotten discussions
-uv run agent-explorer remember "authentication" --k 3
-
-# Find design plans across conversations
-uv run agent-explorer design-coherence
+uv run ae chats
+uv run ae convo <composer_id>
+uv run ae find-solution "query"
+uv run ae remember "query"
+uv run ae ensure-indexed
 ```
 
-### Indexing and search
+## Commands
 
-```bash
-# Build index (idempotent)
-uv run agent-explorer ensure-indexed
+Basic:
+- `info` - Database info
+- `chats` - List conversations
+- `convo <id>` - Show conversation
+- `keys [--prefix] [--like]` - List keys
+- `show <key>` - Show key value
 
-# Vector search (requires sqlite-vec)
-uv run agent-explorer vec-db-index ./agent_vec.db ./agent_index.jsonl
-uv run agent-explorer vec-db-search ./agent_vec.db --query "..." --k 10
-```
+Search:
+- `find-solution <query>` - Search conversation history
+- `remember <query>` - Recall with optional LLM summarization
+- `ensure-indexed` - Build indexes
 
-### Multi-scale viewing
+Analysis:
+- `pairs <id>` - Extract QA pairs
+- `multiscale` - Hierarchical summarization
+- `design-coherence` - Organize design plans
 
-```bash
-# Build hierarchical summaries
-uv run agent-explorer multiscale --save-tree tree.json
+See `uv run agent-explorer --help` for all commands.
 
-# View stats and health
-uv run agent-explorer multiscale-stats tree.json
-uv run agent-explorer multiscale-check tree.json
-```
+## Config
 
-## Configuration
-
-- `AGENT_TYPE`: Agent type (cursor, cline, etc.). Defaults to 'cursor'.
-- `AGENT_STATE_DB` / `CURSOR_STATE_DB`: Override default database path (generic or agent-specific, backward compatible)
-- `AGENT_INDEX_JSONL` / `CURSOR_INDEX_JSONL`: Override index JSONL path (defaults to `./cursor_index.jsonl`)
-- `AGENT_VEC_DB` / `CURSOR_VEC_DB`: Override vector DB path (defaults to `./cursor_vec.db`)
-- `OPENAI_API_KEY`: Required for LLM features
-- `OPENAI_MODEL`: Default model (default: `gpt-4o-mini`)
-- `OPENAI_EMBED_MODEL`: Embedding model (default: `text-embedding-3-small`)
+- `AGENT_TYPE` - Agent type (default: `cursor`)
+- `AGENT_STATE_DB` / `CURSOR_STATE_DB` - Database path
+- `AGENT_INDEX_JSONL` / `CURSOR_INDEX_JSONL` - Index path (default: `./cursor_index.jsonl`)
+- `AGENT_VEC_DB` / `CURSOR_VEC_DB` - Vector DB path (default: `./cursor_vec.db`)
+- `OPENAI_API_KEY` - Required for LLM features
+- `OPENAI_MODEL` - Model (default: `gpt-4o-mini`)
+- `OPENAI_EMBED_MODEL` - Embedding model (default: `text-embedding-3-small`)
 
 ## Features
 
-- **Search**: Semantic and sparse search across chat history
-- **Memory**: Recall past discussions with LLM summarization
-- **Design coherence**: Organize scattered design plans
-- **Multi-scale**: Hierarchical summarization (RAPTOR-like)
-- **Caching**: Idempotent indexing and LLM response caching
-- **Vector search**: sqlite-vec integration for semantic search
+- Agent-agnostic design (Cursor implemented, extensible for Cline/Aider)
+- Multi-source search (vector + sparse, rank-fusion optional)
+- Conversation recall (LLM summarization optional)
+- Key-value access to agent databases
+- Hierarchical summarization
+- Idempotent indexing with caching
+- Read-only database access
 
 ## Notes
 
-- Commands output JSON where noted (`| jq ...` for pipelines)
-- Read-only by default; handles your data with care
-- See `README_DEPENDENCIES.md` for detailed dependency setup
+- Commands output JSON (pipe to `jq` for formatting)
+- Close agent before accessing database

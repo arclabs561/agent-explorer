@@ -10,7 +10,6 @@ from . import db as dbmod
 
 # Import agent backend system
 from .backends import get_backend
-_HAS_AGENT_BACKEND = True
 from . import parser as parsermod
 from . import adversary as adversarymod
 from . import annotate as annotatemod
@@ -46,9 +45,6 @@ def human_size(n: int) -> str:
 
 def _get_table_name(args: argparse.Namespace) -> str:
 	"""Get table name for current agent backend."""
-	if not _HAS_AGENT_BACKEND:
-		return "cursorDiskKV"
-	
 	agent_type = getattr(args, 'agent', None)
 	try:
 		backend = get_backend(agent_type)  # None defaults to cursor
@@ -562,8 +558,7 @@ def build_parser() -> argparse.ArgumentParser:
 	# Shared parent so --db can appear after the subcommand as well
 	parent = argparse.ArgumentParser(add_help=False, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 	parent.add_argument("--db", help="Path to agent state database (defaults via AGENT_STATE_DB or platform-specific path)")
-	if _HAS_AGENT_BACKEND:
-		parent.add_argument("--agent", help="Agent type (cursor, cline, etc.). Defaults to 'cursor'.")
+	parent.add_argument("--agent", help="Agent type (cursor, cline, etc.). Defaults to 'cursor'.")
 	parent.add_argument("--trace-meta", action="append", help="Tracing metadata key=value; repeatable")
 
 	sub = p.add_subparsers(dest="cmd", required=True)

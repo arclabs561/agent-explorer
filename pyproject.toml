@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "agent-explorer"
 version = "0.2.0"
-description = "Agent-agnostic CLI for exploring AI agent chat data (Cursor, Cline, Aider, etc.)"
+description = "CLI tool for exploring AI agent chat data"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -21,6 +21,10 @@ dependencies = [
     "multiscale @ git+https://github.com/arclabs561/multiscale.git",
     # llm-helpers is not yet published - users need to install manually or use local path
     # "llm-helpers @ git+https://github.com/user/llm-helpers.git",  # TODO: Publish to GitHub/PyPI
+    # Local Rust crates with Python bindings
+    # For local dev: uv pip install -e ../rank-refine/rank-refine-python -e ../rank-fusion/rank-fusion-python
+    # "rank-refine @ git+https://github.com/arclabs561/rank-refine.git#subdirectory=rank-refine-python",  # TODO: Publish
+    # "rank-fusion @ git+https://github.com/arclabs561/rank-fusion.git#subdirectory=rank-fusion-python",  # TODO: Publish
 ]
 
 [project.optional-dependencies]
@@ -32,6 +36,16 @@ extras = [
 ]
 dotenv = [
   "python-dotenv>=1.0.1",
+]
+# Optional: rank-fusion and rank-refine for improved search ranking
+# Install from PyPI if available, or from local projects:
+#   uv pip install -e ../rank-refine/rank-refine-python
+#   uv pip install -e ../rank-fusion/rank-fusion-python
+rank-fusion = [
+  # "rank-fusion",  # Uncomment if published to PyPI
+]
+rank-refine = [
+  # "rank-refine",  # Uncomment if published to PyPI
 ]
 
 [dependency-groups]
@@ -47,6 +61,7 @@ dev = [
 
 [project.scripts]
 agent-explorer = "agent_explorer.cli:main"
+ae = "agent_explorer.cli:main"  # Short alias
 cursor-explorer = "agent_explorer.cli:main"  # Backward compatibility alias
 cursor-chat-explorer = "agent_explorer.cli:main"  # Backward compatibility alias
 

@@ -91,12 +91,10 @@ def ensure_indexed(
 	Checks if indexes are up-to-date before rebuilding.
 	Returns dict with paths to index_jsonl and vec_db.
 	"""
-	# Default paths (support generic AGENT_* vars, fall back to CURSOR_* for backward compat)
-	default_index = expand_abs(os.getenv("AGENT_INDEX_JSONL") or os.getenv("CURSOR_INDEX_JSONL", "./cursor_index.jsonl"))
-	default_vec_db = expand_abs(os.getenv("AGENT_VEC_DB") or os.getenv("CURSOR_VEC_DB", "./cursor_vec.db"))
-
-	index_path = expand_abs(index_jsonl) if index_jsonl else default_index
-	vec_path = expand_abs(vec_db) if vec_db else default_vec_db
+	# Default paths (centralized env var resolution)
+	from . import env as envmod
+	index_path = envmod.get_index_jsonl_path(index_jsonl)
+	vec_path = envmod.get_vec_db_path(vec_db)
 
 	# Check if index exists and is up-to-date
 	index_exists = os.path.exists(index_path) and os.path.getsize(index_path) > 0
@@ -177,8 +175,7 @@ def find_solution(
 	if not index_jsonl or not os.path.exists(index_jsonl):
 		return {"error": "Index not found. Run 'index' command first or set auto_index=True."}
 
-	# Normalize query for caching and search (strip whitespace, limit length)
-	query_normalized = query.strip()[:1000]  # Limit to 1000 chars for cache key
+	query_normalized = query.strip()[:1000]
 
 	# Check cache for search results (cache key includes query, k, and index mtime)
 	cache_key = None
@@ -192,91 +189,184 @@ def find_solution(
 				result = json.loads(cached)
 				result["cache_hit"] = True
 				return result
+			except (json.JSONDecodeError, ValueError):
+				pass
+
+	# Try multiple search methods and fuse results using rank-fusion
+	# Collect results from all available methods
+	vector_results: List[Dict] = []
+	sparse_results: List[Dict] = []
+	jsonl_results: List[Dict] = []
+	
+	# Vector search (if available)
+	if vec_db and os.path.exists(vec_db):
+		try:
+			vector_results = indexmod.vec_search(vec_db, "vec_index", query, top_k=k * 2)
+		except Exception:
+			pass
+
+	# Sparse search (SQLite items table)
+	from . import env as envmod
+	items_db = envmod.get_items_db_path()
+	if os.path.exists(items_db):
+		try:
+			sparse_results = indexmod.items_search(items_db, "items", query_normalized, k=k * 2)  # Get more for fusion
 			except Exception:
 				pass
 
-	# Try vector search first (if available) - fastest and most accurate
-	results: List[Dict] = []
-	if vec_db and os.path.exists(vec_db):
+	# JSONL search (always available as fallback, but also used for fusion)
+	if not vector_results and not sparse_results:
+		# Only run JSONL if no other results (fallback mode)
 		try:
-			results = indexmod.vec_search(vec_db, "vec_index", query, top_k=k)
-		except Exception as e:
-			# Fall back to sparse search
-			if os.getenv("CURSOR_VERBOSE"):
-				print(f"Vector search failed: {e}, falling back to sparse", file=sys.stderr)
-			pass
+			from . import rag as ragmod
+			_score = ragmod._score
 
-	# Fall back to sparse search if vector search failed or not available
-	if not results:
-		# Use SQLite items table if available - faster than JSONL
-		# Support generic AGENT_* vars, fall back to CURSOR_* for backward compat
-		items_db = expand_abs(os.getenv("AGENT_ITEMS_DB") or os.getenv("CURSOR_ITEMS_DB", "./cursor_items.db"))
-		if os.path.exists(items_db):
-			try:
-				results = indexmod.items_search(items_db, "items", query_normalized, k=k)
-			except Exception as e:
-				if os.getenv("CURSOR_VERBOSE"):
-					print(f"SQLite search failed: {e}, falling back to JSONL", file=sys.stderr)
+			# Use streaming approach for large files - process line by line
+			# Keep only top candidates in memory to avoid memory issues
+			best_results: List[Tuple[float, Dict]] = []  # (score, item)
+
+			with open(index_jsonl, "r", encoding="utf-8") as f:
+				malformed_count = 0
+				for line_num, line in enumerate(f, 1):
+					line = line.strip()
+					if not line:  # Skip empty lines
+						continue
+					try:
+						obj = json.loads(line)
+						# Build searchable text
+						user = obj.get("user", "") or ""
+						assistant = obj.get("assistant", "") or ""
+						text = (user + "\n" + assistant).strip()
+						if not text:
+							continue
+
+						# Quick score check - only keep top candidates
+						score = _score(query_normalized, text)
+						# Light boost for tags (same as search_items)
+						ann = obj.get("annotations") or {}
+						tags = ann.get("tags") or []
+						for t in tags:
+							if t and t.lower() in query_normalized.lower():
+								score += 2
+
+						if score > 0:
+							best_results.append((score, obj))
+							# Keep only top k*2 candidates during scan to limit memory
+							if len(best_results) > k * 2:
+								best_results.sort(key=lambda x: x[0], reverse=True)
+								best_results = best_results[:k * 2]
+					except json.JSONDecodeError:
+						malformed_count += 1
+						continue
+					except (AttributeError, KeyError, TypeError):
+						continue
+
+			# Sort and return top k*2 for potential fusion
+			best_results.sort(key=lambda x: x[0], reverse=True)
+			jsonl_results = [item for score, item in best_results[:k * 2]]
+			except Exception:
 				pass
 
-		# Last resort: search JSONL directly - slowest but always works
-		# Optimize: streaming approach to avoid loading entire file into memory
-		if not results:
-			try:
-				from . import rag as ragmod
-				_score = ragmod._score
-
-				# Use streaming approach for large files - process line by line
-				# Keep only top candidates in memory to avoid memory issues
-				best_results: List[Tuple[float, Dict]] = []  # (score, item)
-
-				with open(index_jsonl, "r", encoding="utf-8") as f:
-					malformed_count = 0
-					for line_num, line in enumerate(f, 1):
-						line = line.strip()
-						if not line:  # Skip empty lines
-							continue
-						try:
-							obj = json.loads(line)
-							# Build searchable text
-							user = obj.get("user", "") or ""
-							assistant = obj.get("assistant", "") or ""
-							text = (user + "\n" + assistant).strip()
-							if not text:
-								continue
-
-							# Quick score check - only keep top candidates
-							score = _score(query_normalized, text)
-							# Light boost for tags (same as search_items)
-							ann = obj.get("annotations") or {}
-							tags = ann.get("tags") or []
-							for t in tags:
-								if t and t.lower() in query_normalized.lower():
-									score += 2
-
-							if score > 0:
-								best_results.append((score, obj))
-								# Keep only top k*2 candidates during scan to limit memory
-								if len(best_results) > k * 2:
-									best_results.sort(key=lambda x: x[0], reverse=True)
-									best_results = best_results[:k * 2]
-						except json.JSONDecodeError:
-							malformed_count += 1
-							# Log first few malformed lines for debugging
-							if malformed_count <= 3 and os.getenv("CURSOR_VERBOSE"):
-								print(f"Warning: Malformed JSON at line {line_num} in {index_jsonl}", file=sys.stderr)
-							continue
-						except Exception:
-							# Skip other errors (e.g., attribute errors)
-							continue
-
-				# Sort and return top k
-				best_results.sort(key=lambda x: x[0], reverse=True)
-				results = [item for score, item in best_results[:k]]
-			except Exception as e:
-				if os.getenv("CURSOR_VERBOSE"):
-					print(f"JSONL search failed: {e}", file=sys.stderr)
-				pass
+	# Fuse results using rank-fusion if multiple sources available
+	results: List[Dict] = []
+	search_method = None
+	
+	# Collect all result lists for fusion
+	result_lists = []
+	if vector_results:
+		result_lists.append(("vector", vector_results))
+	if sparse_results:
+		result_lists.append(("sparse", sparse_results))
+	if jsonl_results:
+		result_lists.append(("jsonl", jsonl_results))
+	
+	if len(result_lists) > 1:
+		# Multiple sources: use rank-fusion to combine
+		try:
+			import rank_fusion
+			
+			# Convert to rank-fusion format: [(id, score), ...]
+			# For vector: use (1.0 - distance) as score (higher is better)
+			# For sparse/jsonl: use existing score
+			rank_lists = []
+			for method_name, method_results in result_lists:
+				ranks = []
+				for r in method_results:
+					# Create unique ID
+					cid = r.get("composer_id", "")
+					tix = r.get("turn_index", 0)
+					item_id = f"{cid}:{tix}"
+					
+					# Normalize scores (higher is better)
+					if method_name == "vector":
+						# Distance: lower is better, so invert
+						distance = r.get("distance", 1.0)
+						score = max(0.0, 1.0 - distance)  # Convert to similarity score
+					else:
+						# Sparse/JSONL: score is already higher=better, normalize to 0-1
+						raw_score = float(r.get("score", 0))
+						score = min(1.0, raw_score / 100.0) if raw_score > 0 else 0.0
+					
+					ranks.append((item_id, score))
+				
+				if ranks:
+					rank_lists.append(ranks)
+			
+			# Fuse using RRF (Reciprocal Rank Fusion)
+			if len(rank_lists) >= 2:
+				fused = rank_fusion.rrf_multi(rank_lists, k=k * 2)
+				search_method = "fusion"
+				
+				# Map fused results back to full result objects
+				# Create lookup by ID
+				all_results_by_id: Dict[str, Dict] = {}
+				for method_name, method_results in result_lists:
+					for r in method_results:
+						cid = r.get("composer_id", "")
+						tix = r.get("turn_index", 0)
+						item_id = f"{cid}:{tix}"
+						if item_id not in all_results_by_id:
+							all_results_by_id[item_id] = r.copy()
+						# Merge scores from different methods
+						if method_name == "vector":
+							all_results_by_id[item_id]["vec_distance"] = r.get("distance")
+						else:
+							all_results_by_id[item_id]["sparse_score"] = r.get("score")
+				
+				# Build results from fused ranking
+				for item_id, fused_score in fused[:k]:
+					if item_id in all_results_by_id:
+						r = all_results_by_id[item_id].copy()
+						r["fused_score"] = fused_score
+						results.append(r)
+			else:
+				# Only one source, use it directly
+				search_method, results = result_lists[0]
+		except ImportError:
+			if vector_results:
+				results = vector_results[:k]
+				search_method = "vector"
+			elif sparse_results:
+				results = sparse_results[:k]
+				search_method = "sparse"
+			elif jsonl_results:
+				results = jsonl_results[:k]
+				search_method = "jsonl"
+		except Exception:
+			if vector_results:
+				results = vector_results[:k]
+				search_method = "vector"
+			elif sparse_results:
+				results = sparse_results[:k]
+				search_method = "sparse"
+			elif jsonl_results:
+				results = jsonl_results[:k]
+				search_method = "jsonl"
+	else:
+		# Single source: use it directly
+		if result_lists:
+			search_method, results = result_lists[0]
+			results = results[:k]
 
 	# Enrich results with conversation context (limit to k to avoid unnecessary processing)
 	enriched = []
@@ -301,15 +391,18 @@ def find_solution(
 		key = (composer_id, turn_index)
 		if key not in seen:
 			seen.add(key)
-			match_type = "vector" if "distance" in r else "sparse"
+			# Determine match type from available scores
+			match_type = "fusion" if "fused_score" in r else ("vector" if "distance" in r or "vec_distance" in r else "sparse")
 			if overall_match_type is None:
 				overall_match_type = match_type
+			# Use fused_score if available, otherwise use best available score
+			score = r.get("fused_score") or r.get("score") or r.get("distance")
 			enriched.append({
 				"composer_id": composer_id,
 				"turn_index": turn_index,
 				"user_head": (r.get("user_head") or "")[:200],
 				"assistant_head": (r.get("assistant_head") or "")[:300],
-				"score": r.get("score") or r.get("distance"),
+				"score": score,
 				"match_type": match_type,
 			})
 
@@ -320,7 +413,8 @@ def find_solution(
 		"index_path": index_jsonl,
 		"vec_db_path": vec_db,
 		"cache_hit": cache_hit,
-		"match_type": overall_match_type,  # Overall match type (vector/sparse)
+		"match_type": overall_match_type,  # Overall match type (vector/sparse/fusion)
+		"search_method": search_method,  # Which search method was used (vector/sparse/jsonl/fusion)
 	}
 
 	# Cache the result
@@ -459,13 +553,16 @@ Provide a concise summary of what was discussed, key points, and any decisions m
 			except Exception as e:
 				memory_summary = {"error": str(e)}
 
-	return {
+	result = {
 		"query": query,
 		"results": results[:k],
 		"memory_summary": memory_summary,
 		"count": len(results),
 		"memory_cache_hit": memory_cache_hit,
 	}
+	if search_method:
+		result["search_method"] = search_method
+	return result
 
 
 def find_design_plans(

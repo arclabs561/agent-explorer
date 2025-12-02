@@ -4,7 +4,8 @@ set -euo pipefail
 # Common helpers for job scripts
 
 # Default repo path; can be overridden by environment
-REPO="${REPO:-/Users/henry/Documents/dev/devdev}"
+# If not set, use current directory or parent
+REPO="${REPO:-${PWD:-$(pwd)}}"
 LOG_DIR="${LOG_DIR:-$REPO/logs}"
 
 log() {

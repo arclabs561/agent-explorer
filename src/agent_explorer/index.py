@@ -26,10 +26,9 @@ def _load_sqlite_vec(conn) -> None:
 	except ImportError:
 		pass
 	except Exception as e:
-		# sqlite_vec package exists but failed to load
 		raise RuntimeError(
-			f"sqlite-vec package loaded but failed to initialize: {e}\n"
-			"Try: pip install sqlite-vec or uv pip install sqlite-vec"
+			f"sqlite-vec failed to initialize: {e}. "
+			"Try: pip install sqlite-vec"
 		) from e
 
 	# Fallback to extension names

@@ -2,9 +2,10 @@
 set -euo pipefail
 
 JOB="agent_qa_sweep"
-REPO="/Users/henry/Documents/dev/devdev"
 source "$(dirname "$0")/lib.sh"
 
+# Use REPO from environment or default to current directory
+REPO="${REPO:-${PWD:-$(pwd)}}"
 cd "$REPO"
 
 # Load local env if present
