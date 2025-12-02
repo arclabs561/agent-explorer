@@ -13,9 +13,7 @@ def default_db_path(agent_type: Optional[str] = None) -> str:
     Supports multiple agents via backend system. Defaults to Cursor for backward compatibility.
 
     - Respects `CURSOR_STATE_DB` (or agent-specific env var) if set
-    - macOS: prefers globalStorage then workspaceStorage
-    - Windows: `%APPDATA%/Agent/User/...`
-    - Linux: `~/.config/Agent/User/...`
+    - Uses backend system for agent-specific path detection
     
     Args:
         agent_type: Agent identifier (e.g., 'cursor', 'cline'). 
@@ -30,41 +28,21 @@ def default_db_path(agent_type: Optional[str] = None) -> str:
             pass
 
     # Legacy Cursor-specific implementation (backward compatibility)
+    # This fallback ensures compatibility if backend system fails
     env_override = os.getenv("CURSOR_STATE_DB")
     if env_override:
-        return os.path.expanduser(os.path.expandvars(env_override))
+        return os.path.abspath(os.path.expanduser(os.path.expandvars(env_override)))
 
-    if sys.platform == "darwin":
-        # macOS defaults
-        darwin_global = os.path.expanduser(
+    # Use Cursor backend directly for legacy fallback
+    try:
+        from .backends.cursor import CursorBackend
+        backend = CursorBackend()
+        return backend.get_db_path()
+    except Exception:
+        # Ultimate fallback: hardcoded macOS path
+        return os.path.expanduser(
             "~/Library/Application Support/Cursor/User/globalStorage/state.vscdb"
         )
-        darwin_workspace = os.path.expanduser(
-            "~/Library/Application Support/Cursor/User/workspaceStorage/state.vscdb"
-        )
-        if os.path.exists(darwin_global):
-            return darwin_global
-        if os.path.exists(darwin_workspace):
-            return darwin_workspace
-        return darwin_global
-    if os.name == "nt" or sys.platform.startswith("win"):
-        # Windows defaults
-        appdata = os.environ.get("APPDATA", "")
-        win_global = os.path.join(appdata, "Cursor", "User", "globalStorage", "state.vscdb")
-        win_workspace = os.path.join(appdata, "Cursor", "User", "workspaceStorage", "state.vscdb")
-        if os.path.exists(win_global):
-            return win_global
-        if os.path.exists(win_workspace):
-            return win_workspace
-        return win_global
-    # Linux / other Unix
-    lin_global = os.path.expanduser("~/.config/Cursor/User/globalStorage/state.vscdb")
-    lin_workspace = os.path.expanduser("~/.config/Cursor/User/workspaceStorage/state.vscdb")
-    if os.path.exists(lin_global):
-        return lin_global
-    if os.path.exists(lin_workspace):
-        return lin_workspace
-    return lin_global
 
 
 def expand_abs(path: str) -> str:

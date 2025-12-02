@@ -46,22 +46,16 @@ def human_size(n: int) -> str:
 
 def _get_table_name(args: argparse.Namespace) -> str:
 	"""Get table name for current agent backend."""
-	if _HAS_AGENT_BACKEND:
-		agent_type = getattr(args, 'agent', None)
-		if agent_type:
-			try:
-				backend = get_backend(agent_type)
-				return backend.get_table_name()
-			except (ValueError, ImportError):
-				pass
-		# Try to get default backend if no agent specified
-		try:
-			backend = get_backend()  # Uses AGENT_TYPE env var or defaults to cursor
-			return backend.get_table_name()
-		except (ValueError, ImportError):
-			pass
-	# Default to Cursor table name for backward compatibility
-	return "cursorDiskKV"
+	if not _HAS_AGENT_BACKEND:
+		return "cursorDiskKV"
+	
+	agent_type = getattr(args, 'agent', None)
+	try:
+		backend = get_backend(agent_type)  # None defaults to cursor
+		return backend.get_table_name()
+	except (ValueError, ImportError):
+		# Fall back to Cursor table name for backward compatibility
+		return "cursorDiskKV"
 
 
 def _get_db_path(args: argparse.Namespace) -> str:
@@ -74,8 +68,7 @@ def _get_db_path(args: argparse.Namespace) -> str:
 
 
 def cmd_info(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	table_name = _get_table_name(args)
 
 	print(f"DB: {db_path}")
@@ -101,8 +94,7 @@ def cmd_info(args: argparse.Namespace) -> int:
 
 
 def cmd_tables(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	conn = dbmod.connect_readonly(db_path)
 	for name in dbmod.list_tables(conn):
 		print(name)
@@ -110,8 +102,7 @@ def cmd_tables(args: argparse.Namespace) -> int:
 
 
 def cmd_keys(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	table_name = _get_table_name(args)
 
 	conn = dbmod.connect_readonly(db_path)
@@ -125,8 +116,7 @@ def cmd_keys(args: argparse.Namespace) -> int:
 
 
 def cmd_search(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	table_name = _get_table_name(args)
 	conn = dbmod.connect_readonly(db_path)
 	rows = dbmod.search_kv(conn, key_like=args.key_like, value_contains=args.contains, limit=args.limit, table=table_name)
@@ -136,8 +126,7 @@ def cmd_search(args: argparse.Namespace) -> int:
 
 
 def cmd_show(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	table_name = _get_table_name(args)
 	conn = dbmod.connect_readonly(db_path)
 	val = dbmod.kv_value(conn, args.key, table=table_name)
@@ -152,8 +141,7 @@ def cmd_show(args: argparse.Namespace) -> int:
 
 
 def cmd_chats(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	table_name = _get_table_name(args)
 	conn = dbmod.connect_readonly(db_path)
 	keys = dbmod.composer_data_keys(conn, limit=args.limit, table=table_name)
@@ -184,8 +172,7 @@ def cmd_chats(args: argparse.Namespace) -> int:
 
 
 def cmd_convo(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	conn = dbmod.connect_readonly(db_path)
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	if not messages:
@@ -199,8 +186,7 @@ def cmd_convo(args: argparse.Namespace) -> int:
 
 
 def cmd_dump(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	conn = dbmod.connect_readonly(db_path)
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	print(json.dumps(messages, ensure_ascii=False, indent=2))
@@ -208,8 +194,7 @@ def cmd_dump(args: argparse.Namespace) -> int:
 
 
 def cmd_pairs(args: argparse.Namespace) -> int:
-	agent_type = getattr(args, 'agent', None)
-	db_path = expand_abs(args.db or default_db_path(agent_type=agent_type))
+	db_path = _get_db_path(args)
 	conn = dbmod.connect_readonly(db_path)
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	pairs = parsermod.build_qa_pairs(messages)
@@ -238,7 +223,7 @@ def cmd_pairs(args: argparse.Namespace) -> int:
 
 
 def cmd_adversarial(args: argparse.Namespace) -> int:
-	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
+	conn = dbmod.connect_readonly(_get_db_path(args))
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	pairs = parsermod.build_qa_pairs(messages)
 	out = []
@@ -281,7 +266,7 @@ def cmd_prompt(args: argparse.Namespace) -> int:
 
 
 def cmd_scales(args: argparse.Namespace) -> int:
-	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
+	conn = dbmod.connect_readonly(_get_db_path(args))
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	pairs = parsermod.build_qa_pairs(messages)
 	result = {"heuristic": annotatemod.annotate_conversation_scales(pairs)}
@@ -342,7 +327,7 @@ def _build_corpus(conn, composer_id: str, scope: str):
 
 
 def cmd_index_embeds(args: argparse.Namespace) -> int:
-	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
+	conn = dbmod.connect_readonly(_get_db_path(args))
 	items = _build_corpus(conn, args.composer_id, args.scope)
 	if not items:
 		print(json.dumps({"error": "no items"}))
@@ -356,7 +341,7 @@ def cmd_index_embeds(args: argparse.Namespace) -> int:
 
 
 def cmd_vsearch(args: argparse.Namespace) -> int:
-	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
+	conn = dbmod.connect_readonly(_get_db_path(args))
 	items = _build_corpus(conn, args.composer_id, args.scope)
 	if not items:
 		print(json.dumps({"error": "no items"}))
@@ -378,7 +363,7 @@ def cmd_vsearch(args: argparse.Namespace) -> int:
 
 def cmd_review(args: argparse.Namespace) -> int:
 	# Review annotations for real chats: base vs adversarial variants
-	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
+	conn = dbmod.connect_readonly(_get_db_path(args))
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	pairs = parsermod.build_qa_pairs(messages)
 	if not pairs:
@@ -426,7 +411,7 @@ def cmd_review(args: argparse.Namespace) -> int:
 
 def cmd_rag(args: argparse.Namespace) -> int:
 	# Build index from a real conversation and retrieve items by seed queries
-	conn = dbmod.connect_readonly(expand_abs(args.db or default_db_path()))
+	conn = dbmod.connect_readonly(_get_db_path(args))
 	messages = parsermod.reconstruct_conversation(conn, args.composer_id)
 	items = ragmod.build_turn_items(messages)
 	results: Dict[str, list] = {}
