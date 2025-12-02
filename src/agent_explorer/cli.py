@@ -24,7 +24,6 @@ from . import rag as ragmod
 from . import index as indexmod
 from . import toolchat as toolchatmod
 from . import qa as qamod
-# memory and docs modules removed - functionality may be elsewhere
 from . import streams as streammod
 from . import cluster as clustermod
 from . import multiscale as multiscalemod

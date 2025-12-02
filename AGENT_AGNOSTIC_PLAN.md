@@ -22,22 +22,22 @@
 
 ## Current Cursor-Specific Elements
 
-### 1. Database Path Detection
-- **File**: `src/cursor_explorer/paths.py`
-- **Issue**: Hardcoded Cursor paths (`~/Library/Application Support/Cursor/...`)
-- **Fix**: Abstract to support multiple agents
+### 1. Database Path Detection ✅ COMPLETE
+- **File**: `src/agent_explorer/paths.py` (renamed)
+- **Status**: Abstracted to support multiple agents via backend system
+- **Implementation**: Uses `AgentBackend` abstraction with platform-specific paths
 
-### 2. Table Names
-- **Issue**: Hardcoded `cursorDiskKV` table
-- **Fix**: Make table names configurable per agent
+### 2. Table Names ✅ COMPLETE
+- **Status**: Table names are configurable per agent via backend system
+- **Implementation**: Each `AgentBackend` provides `get_table_name()` method
 
-### 3. Naming
-- **Issue**: "cursor" in package name, CLI name, descriptions
-- **Fix**: Rename to generic "agent-explorer" or "chat-explorer"
+### 3. Naming ✅ COMPLETE
+- **Status**: Package renamed to `agent_explorer`, CLI to `agent-explorer`
+- **Implementation**: All references updated, backward compatibility aliases maintained
 
-### 4. Environment Variables
-- **Issue**: `CURSOR_STATE_DB` is agent-specific
-- **Fix**: Generic `AGENT_STATE_DB` with agent-specific fallbacks
+### 4. Environment Variables ✅ COMPLETE
+- **Status**: Generic `AGENT_*` variables with `CURSOR_*` fallbacks for backward compatibility
+- **Implementation**: Supports `AGENT_STATE_DB`, `AGENT_INDEX_JSONL`, `AGENT_VEC_DB` with legacy fallbacks
 
 ## Refactoring Strategy
 
@@ -104,12 +104,12 @@ AGENT_TYPE = os.getenv("AGENT_TYPE", "cursor")  # Default to cursor for backward
 
 ## Implementation Steps
 
-1. **Create backend abstraction** (Phase 1)
-2. **Update paths.py** to use backend abstraction
-3. **Update CLI** to support `--agent` flag
-4. **Rename package** (with backward compat)
-5. **Add MCP server** (optional, Phase 4)
-6. **Update documentation**
+1. ✅ **Create backend abstraction** (Phase 1) - COMPLETE
+2. ✅ **Update paths.py** to use backend abstraction - COMPLETE
+3. ✅ **Update CLI** to support `--agent` flag - COMPLETE
+4. ✅ **Rename package** (with backward compat) - COMPLETE
+5. ⏳ **Add MCP server** (optional, Phase 4) - PENDING
+6. ✅ **Update documentation** - COMPLETE
 
 ## Backward Compatibility
 
