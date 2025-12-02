@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from cursor_explorer import docs as docmod
+from agent_explorer import docs as docmod
 
 
 def test_index_markdown_dir_basic(tmp_path):

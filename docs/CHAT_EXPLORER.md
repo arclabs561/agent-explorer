@@ -23,8 +23,8 @@ uv sync --all-extras --dev
 Run CLI:
 
 ```bash
-uv run cursor-explorer --help
-uv run cursor-explorer info
+uv run agent-explorer --help
+uv run agent-explorer info
 ```
 
 ### Optional extras
@@ -51,7 +51,7 @@ Set `OPENAI_API_KEY` (in shell or `.env`). Optionally `OPENAI_MODEL`.
 ### Prompt runner
 
 ```bash
-uv run cursor-explorer prompt prompts/annotation.json.tmpl \
+uv run agent-explorer prompt prompts/annotation.json.tmpl \
   --var user="Hello" --var assistant="World" --llm-model gpt-4o-mini
 ```
 

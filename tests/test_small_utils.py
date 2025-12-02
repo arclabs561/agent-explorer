@@ -1,6 +1,6 @@
 
-from cursor_explorer import prompts as promptmod
-from cursor_explorer import env as envmod
+from agent_explorer import prompts as promptmod
+from agent_explorer import env as envmod
 import llm_cache as cache
 
 

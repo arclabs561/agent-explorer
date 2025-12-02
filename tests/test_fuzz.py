@@ -9,7 +9,7 @@ PKG_SRC = str(Path(__file__).resolve().parents[1] / "src")
 
 
 def run_cmd(args):
-	cmd = [sys.executable, "-m", "cursor_explorer", *args]
+	cmd = [sys.executable, "-m", "agent_explorer", *args]
 	env = os.environ.copy()
 	env["PYTHONPATH"] = PKG_SRC
 	return subprocess.run(cmd, env=env, capture_output=True, text=True)

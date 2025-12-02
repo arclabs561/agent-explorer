@@ -1,5 +1,5 @@
-from cursor_explorer import vector as vectmod
-from cursor_explorer import embeddings as embmod
+from agent_explorer import vector as vectmod
+from agent_explorer import embeddings as embmod
 
 
 def test_cosine_and_topk_and_l2():

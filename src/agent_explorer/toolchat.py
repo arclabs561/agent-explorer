@@ -18,11 +18,13 @@ from . import cluster as clustermod
 
 
 def _default_index_path() -> str:
-	return expand_abs(os.getenv("CURSOR_INDEX_JSONL", "./cursor_index.jsonl"))
+	# Support generic AGENT_* vars, fall back to CURSOR_* for backward compat
+	return expand_abs(os.getenv("AGENT_INDEX_JSONL") or os.getenv("CURSOR_INDEX_JSONL", "./cursor_index.jsonl"))
 
 
 def _default_vec_db_path() -> str:
-	return expand_abs(os.getenv("CURSOR_VEC_DB", "./cursor_vec.db"))
+	# Support generic AGENT_* vars, fall back to CURSOR_* for backward compat
+	return expand_abs(os.getenv("AGENT_VEC_DB") or os.getenv("CURSOR_VEC_DB", "./cursor_vec.db"))
 
 
 def get_tools_schema() -> List[Dict[str, Any]]:

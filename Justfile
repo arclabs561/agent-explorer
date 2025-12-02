@@ -35,56 +35,56 @@ clean:
 	rm -rf .venv .pytest_cache __pycache__ */__pycache__ dist build *.egg-info test_log.log
 
 run *args:
-	PYTHONPATH=src uv run python -m cursor_explorer {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer {{args}}
 
 info *args:
-	PYTHONPATH=src uv run python -m cursor_explorer info {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer info {{args}}
 
 tables *args:
-	PYTHONPATH=src uv run python -m cursor_explorer tables {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer tables {{args}}
 
 keys *args:
-	PYTHONPATH=src uv run python -m cursor_explorer keys {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer keys {{args}}
 
 search *args:
-	PYTHONPATH=src uv run python -m cursor_explorer search {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer search {{args}}
 
 show *args:
-	PYTHONPATH=src uv run python -m cursor_explorer show {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer show {{args}}
 
 chats *args:
-	PYTHONPATH=src uv run python -m cursor_explorer chats {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer chats {{args}}
 
 fuzz *args:
-	PYTHONPATH=src uv run python -m cursor_explorer fuzz {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer fuzz {{args}}
 
 pairs *args:
-	PYTHONPATH=src uv run python -m cursor_explorer pairs {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer pairs {{args}}
 
 scales *args:
-	PYTHONPATH=src uv run python -m cursor_explorer scales {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer scales {{args}}
 
 # New recipes for indexing and vector search
 index *args:
-	PYTHONPATH=src uv run python -m cursor_explorer index {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer index {{args}}
 
 sample *args:
-	PYTHONPATH=src uv run python -m cursor_explorer sample {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer sample {{args}}
 
 vec-index *args:
-	PYTHONPATH=src uv run python -m cursor_explorer vec-db-index {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer vec-db-index {{args}}
 
 vec-search *args:
-	PYTHONPATH=src uv run python -m cursor_explorer vec-db-search {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer vec-db-search {{args}}
 
 vsearch *args:
-	PYTHONPATH=src uv run python -m cursor_explorer vsearch {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer vsearch {{args}}
 
 index-embeds *args:
-	PYTHONPATH=src uv run python -m cursor_explorer index-embeds {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer index-embeds {{args}}
 
 toolchat *args:
-	PYTHONPATH=src uv run python -m cursor_explorer toolchat {{args}}
+	PYTHONPATH=src uv run python -m agent_explorer toolchat {{args}}
 
 # Local script runners
 agent-qa-sweep:

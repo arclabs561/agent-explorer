@@ -2,8 +2,8 @@ import json
 import sqlite3
 from pathlib import Path
 
-from cursor_explorer import index as indexmod
-from cursor_explorer import toolchat as toolchatmod
+from agent_explorer import index as indexmod
+from agent_explorer import toolchat as toolchatmod
 
 
 def _write_jsonl(tmp_path: Path, items):

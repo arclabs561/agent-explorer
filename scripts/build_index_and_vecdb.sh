@@ -23,13 +23,13 @@ if [[ -f "$REPO/.env" ]]; then
   set +a
 fi
 # Optional user-level env files
-if [[ -f "$HOME/.cursor-explorer.env" ]]; then
+if [[ -f "$HOME/.agent-explorer.env" ]]; then
   # shellcheck disable=SC1091
-  source "$HOME/.cursor-explorer.env"
+  source "$HOME/.agent-explorer.env"
 fi
-if [[ -f "$HOME/.cursor_explorer.env" ]]; then
+if [[ -f "$HOME/.agent_explorer.env" ]]; then
   # shellcheck disable=SC1091
-  source "$HOME/.cursor_explorer.env"
+  source "$HOME/.agent_explorer.env"
 fi
 
 export PYTHONPATH="$REPO/src"
@@ -52,13 +52,13 @@ fi
 trap release_lock EXIT
 
 run_index() {
-  PYTHONPATH="$REPO/src" "$UV_BIN" run python -m cursor_explorer \
+  PYTHONPATH="$REPO/src" "$UV_BIN" run python -m agent_explorer \
     index "$INDEX_JSONL" --limit-composers "$LIMIT_COMPOSERS" --max-turns "$MAX_TURNS" \
     --trace-meta job="$JOB" --trace-meta runner=script
 }
 
 run_vec() {
-  PYTHONPATH="$REPO/src" "$UV_BIN" run python -m cursor_explorer \
+  PYTHONPATH="$REPO/src" "$UV_BIN" run python -m agent_explorer \
     vec-db-index "$VEC_DB" "$INDEX_JSONL" \
     --trace-meta job="$JOB" --trace-meta runner=script
 }

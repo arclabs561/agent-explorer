@@ -51,3 +51,6 @@ htmlcov/
 # Temporary exploration files
 EXPLORATION_FINDINGS.md
 TIDY_AND_TEST_REPORT.md
+
+# Archive directory (historical documents, not for tracking)
+docs/archive/

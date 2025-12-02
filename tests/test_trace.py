@@ -1,7 +1,7 @@
 import json
 import os
 
-from cursor_explorer import trace as tracemod
+from agent_explorer import trace as tracemod
 
 
 def test_trace_writes_jsonl(tmp_path):

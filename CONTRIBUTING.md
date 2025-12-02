@@ -1,13 +1,13 @@
 # Contributing
 
-Thank you for considering contributing to cursor-explorer!
+Thank you for considering contributing to agent-explorer!
 
 ## Development Setup
 
 1. Clone the repository:
    ```bash
    git clone <repo-url>
-   cd cursor-explorer
+   cd agent-explorer
    ```
 
 2. Install dependencies:

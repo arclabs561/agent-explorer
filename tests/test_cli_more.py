@@ -10,7 +10,7 @@ PKG_SRC = str(Path(__file__).resolve().parents[1] / "src")
 
 
 def run_module(args):
-    cmd = [sys.executable, "-m", "cursor_explorer", *args]
+    cmd = [sys.executable, "-m", "agent_explorer", *args]
     env = os.environ.copy()
     env["PYTHONPATH"] = PKG_SRC
     return subprocess.run(cmd, env=env, capture_output=True, text=True)
@@ -76,7 +76,7 @@ def test_rules_extract_cli(tmp_path):
 		{"composer_id": "c1", "turn_index": 1, "user": "we decided to use sqlite-vec", "assistant": "Sounds good.", "user_head": "we decided to use sqlite-vec", "assistant_head": "Sounds good.", "annotations": {}},
 	]
 	idx = _write_jsonl(tmp_path, items)
-	cmd = [sys.executable, "-m", "cursor_explorer", "rules-extract", str(idx), str(tmp_path / "rules.json")]
+	cmd = [sys.executable, "-m", "agent_explorer", "rules-extract", str(idx), str(tmp_path / "rules.json")]
 	env = os.environ.copy()
 	env["PYTHONPATH"] = PKG_SRC
 	proc = sys.modules.get("subprocess")

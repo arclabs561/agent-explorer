@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 
-from cursor_explorer import qa as qamod
+from agent_explorer import qa as qamod
 
 
 def _write_jsonl(tmp_path: Path, lines: list[dict | str]) -> Path:

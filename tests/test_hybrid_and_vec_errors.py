@@ -1,8 +1,8 @@
 
 import pytest
 
-from cursor_explorer import toolchat as toolchatmod
-from cursor_explorer import index as indexmod
+from agent_explorer import toolchat as toolchatmod
+from agent_explorer import index as indexmod
 
 
 def test_hybrid_merge_prefers_join_by_id(monkeypatch):

@@ -2,8 +2,8 @@ import os
 import sqlite3
 from pathlib import Path
 
-from cursor_explorer import db as dbmod
-from cursor_explorer import paths as pathmod
+from agent_explorer import db as dbmod
+from agent_explorer import paths as pathmod
 
 
 def _make_kv_db(tmp_path: Path) -> Path:
@@ -52,6 +52,39 @@ def test_kv_helpers_and_search(tmp_path):
 
 
 def test_paths_default_and_expand_abs(tmp_path, monkeypatch):
+	"""Test default_db_path and expand_abs functions."""
+	# Test expand_abs
+	expanded = pathmod.expand_abs("~/test")
+	assert os.path.isabs(expanded)
+	
+	# Test default_db_path with env override
+	test_db = str(tmp_path / "test.db")
+	monkeypatch.setenv("CURSOR_STATE_DB", test_db)
+	result = pathmod.default_db_path()
+	assert result == os.path.abspath(test_db)
+	
+	# Test default_db_path with agent_type
+	result = pathmod.default_db_path(agent_type="cursor")
+	assert isinstance(result, str)
+	assert len(result) > 0
+
+
+def test_paths_default_db_path_with_backend(monkeypatch):
+	"""Test default_db_path uses backend system when available."""
+	# Should use backend system
+	result = pathmod.default_db_path(agent_type="cursor")
+	assert isinstance(result, str)
+	assert len(result) > 0
+
+
+def test_paths_default_db_path_fallback(monkeypatch):
+	"""Test default_db_path falls back to legacy implementation."""
+	# Mock backend to fail
+	with monkeypatch.context() as m:
+		m.setattr(pathmod, "_USE_AGENT_BACKEND", False)
+		# Should fall back to legacy implementation
+		result = pathmod.default_db_path()
+		assert isinstance(result, str)
     # env override wins
     fake = tmp_path / "state.vscdb"
     monkeypatch.setenv("CURSOR_STATE_DB", str(fake))

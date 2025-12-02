@@ -11,7 +11,7 @@ PKG_SRC = str(Path(__file__).resolve().parents[1] / "src")
 def run_cli(args):
 	env = os.environ.copy()
 	env["PYTHONPATH"] = PKG_SRC
-	return subprocess.run([sys.executable, "-m", "cursor_explorer", *args], env=env, capture_output=True, text=True)
+	return subprocess.run([sys.executable, "-m", "agent_explorer", *args], env=env, capture_output=True, text=True)
 
 
 def test_cluster_index_and_summarize_without_llm(tmp_path):

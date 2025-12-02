@@ -91,9 +91,9 @@ def ensure_indexed(
 	Checks if indexes are up-to-date before rebuilding.
 	Returns dict with paths to index_jsonl and vec_db.
 	"""
-	# Default paths
-	default_index = expand_abs(os.getenv("CURSOR_INDEX_JSONL", "./cursor_index.jsonl"))
-	default_vec_db = expand_abs(os.getenv("CURSOR_VEC_DB", "./cursor_vec.db"))
+	# Default paths (support generic AGENT_* vars, fall back to CURSOR_* for backward compat)
+	default_index = expand_abs(os.getenv("AGENT_INDEX_JSONL") or os.getenv("CURSOR_INDEX_JSONL", "./cursor_index.jsonl"))
+	default_vec_db = expand_abs(os.getenv("AGENT_VEC_DB") or os.getenv("CURSOR_VEC_DB", "./cursor_vec.db"))
 
 	index_path = expand_abs(index_jsonl) if index_jsonl else default_index
 	vec_path = expand_abs(vec_db) if vec_db else default_vec_db
@@ -209,7 +209,8 @@ def find_solution(
 	# Fall back to sparse search if vector search failed or not available
 	if not results:
 		# Use SQLite items table if available - faster than JSONL
-		items_db = expand_abs(os.getenv("CURSOR_ITEMS_DB", "./cursor_items.db"))
+		# Support generic AGENT_* vars, fall back to CURSOR_* for backward compat
+		items_db = expand_abs(os.getenv("AGENT_ITEMS_DB") or os.getenv("CURSOR_ITEMS_DB", "./cursor_items.db"))
 		if os.path.exists(items_db):
 			try:
 				results = indexmod.items_search(items_db, "items", query_normalized, k=k)

@@ -1,7 +1,7 @@
 
 import sqlite3
 
-from cursor_explorer import parser as parsermod
+from agent_explorer import parser as parsermod
 
 
 def _mk_conn():
@@ -27,7 +27,7 @@ def test_list_composer_ids_filters_prefix(monkeypatch):
             "composerData:0",
         ]
 
-    monkeypatch.setattr("cursor_explorer.db.composer_data_keys", fake_composer_data_keys)
+    monkeypatch.setattr("agent_explorer.db.composer_data_keys", fake_composer_data_keys)
     conn = _mk_conn()
     ids = parsermod.list_composer_ids(conn)
     assert calls["ran"] and ids == ["cid1", "cid2", "0"]
@@ -54,7 +54,7 @@ def test_reconstruct_conversation_fallbacks_and_roles(monkeypatch):
             return b'{"content":"world"}'
         return None
 
-    monkeypatch.setattr("cursor_explorer.db.kv_value", fake_kv_value)
+    monkeypatch.setattr("agent_explorer.db.kv_value", fake_kv_value)
     conn = _mk_conn()
     msgs = parsermod.reconstruct_conversation(conn, "cid")
     assert len(msgs) == 2

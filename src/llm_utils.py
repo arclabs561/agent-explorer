@@ -4,7 +4,7 @@ import json
 import os
 import hashlib
 from typing import Dict, List, Optional, Any
-from cursor_explorer import trace as tracemod
+from agent_explorer import trace as tracemod
 
 try:
 	from openai import OpenAI  # type: ignore

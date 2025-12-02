@@ -4,14 +4,14 @@ import json
 import subprocess
 from pathlib import Path
 import llm_helpers as llmmod
-from cursor_explorer import annotate as annotatemod
+from agent_explorer import annotate as annotatemod
 
 PKG_SRC = str(Path(__file__).resolve().parents[1] / "src")
 DB_GLOBAL = os.path.expanduser("~/Library/Application Support/Cursor/User/globalStorage/state.vscdb")
 
 
 def run_pairs(composer_id: str):
-	cmd = [sys.executable, "-m", "cursor_explorer", "pairs", "--db", DB_GLOBAL, composer_id, "--annotate"]
+	cmd = [sys.executable, "-m", "agent_explorer", "pairs", "--db", DB_GLOBAL, composer_id, "--annotate"]
 	env = os.environ.copy()
 	env["PYTHONPATH"] = PKG_SRC
 	return subprocess.run(cmd, env=env, capture_output=True, text=True)
@@ -22,7 +22,7 @@ def test_pairs_smoke_if_db_exists():
 	if not os.path.exists(DB_GLOBAL):
 		pytest.skip("Cursor DB not found; skipping CLI pairs smoke test")
 	# Probe a composer id by listing chats first
-	cmd_list = [sys.executable, "-m", "cursor_explorer", "chats", "--db", DB_GLOBAL, "--limit", "1"]
+	cmd_list = [sys.executable, "-m", "agent_explorer", "chats", "--db", DB_GLOBAL, "--limit", "1"]
 	env = os.environ.copy()
 	env["PYTHONPATH"] = PKG_SRC
 	proc_list = subprocess.run(cmd_list, env=env, capture_output=True, text=True)

@@ -1,15 +1,13 @@
 import os
 import sys
+from typing import Optional
 
-# Backward compatibility: Import from agent_explorer if available, otherwise use legacy
-try:
-    from agent_explorer.backends import get_backend
-    _USE_AGENT_BACKEND = True
-except ImportError:
-    _USE_AGENT_BACKEND = False
+# Import backend system
+from .backends import get_backend
+_USE_AGENT_BACKEND = True
 
 
-def default_db_path(agent_type: str = None) -> str:
+def default_db_path(agent_type: Optional[str] = None) -> str:
     """Return the default agent SQLite DB path.
     
     Supports multiple agents via backend system. Defaults to Cursor for backward compatibility.

@@ -2,8 +2,8 @@ import json
 import os
 from pathlib import Path
 
-from cursor_explorer import toolchat as toolchatmod
-from cursor_explorer import index as indexmod
+from agent_explorer import toolchat as toolchatmod
+from agent_explorer import index as indexmod
 
 
 def test_tools_schema_contains_expected_tools():
@@ -54,7 +54,7 @@ def test_sample_cli_on_index(tmp_path, monkeypatch):
 	PKG_SRC = str(Path(__file__).resolve().parents[1] / "src")
 	env = os.environ.copy()
 	env["PYTHONPATH"] = PKG_SRC
-	proc = subprocess.run([sys.executable, "-m", "cursor_explorer", "sample", str(index_path), "2"], env=env, capture_output=True, text=True)
+	proc = subprocess.run([sys.executable, "-m", "agent_explorer", "sample", str(index_path), "2"], env=env, capture_output=True, text=True)
 	assert proc.returncode == 0
 	arr = json.loads(proc.stdout)
 	assert isinstance(arr, list) and len(arr) == 2

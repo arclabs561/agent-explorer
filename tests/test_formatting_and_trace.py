@@ -1,5 +1,5 @@
-from cursor_explorer import formatting as fmt
-from cursor_explorer import trace as tracemod
+from agent_explorer import formatting as fmt
+from agent_explorer import trace as tracemod
 
 
 def test_pretty_and_preview_and_to_text():

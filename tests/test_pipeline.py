@@ -12,7 +12,7 @@ DB_GLOBAL = os.path.expanduser("~/Library/Application Support/Cursor/User/global
 def run_cli(args):
     env = os.environ.copy()
     env["PYTHONPATH"] = PKG_SRC
-    return subprocess.run([sys.executable, "-m", "cursor_explorer", *args], env=env, capture_output=True, text=True)
+    return subprocess.run([sys.executable, "-m", "agent_explorer", *args], env=env, capture_output=True, text=True)
 
 
 def test_index_and_rag_sparse_over_real_db():

@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
-  { name = "Cursor Explorer" }
+  { name = "Agent Explorer" }
 ]
 dependencies = [
     "numpy>=2.0.2",
@@ -46,13 +46,13 @@ dev = [
 ]
 
 [project.scripts]
-agent-explorer = "cursor_explorer.cli:main"
-cursor-explorer = "cursor_explorer.cli:main"  # Backward compatibility alias
-cursor-chat-explorer = "cursor_explorer.cli:main"  # Backward compatibility alias
+agent-explorer = "agent_explorer.cli:main"
+cursor-explorer = "agent_explorer.cli:main"  # Backward compatibility alias
+cursor-chat-explorer = "agent_explorer.cli:main"  # Backward compatibility alias
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["cursor_explorer"]
+packages = ["agent_explorer"]
 py-modules = ["llm_utils", "llm_cache"]
 
 [tool.uv]

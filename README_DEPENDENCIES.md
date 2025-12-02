@@ -27,7 +27,7 @@ This project depends on two local packages that need to be installed separately:
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd cursor-explorer
+cd agent-explorer
 
 # Install main dependencies
 uv sync --all-extras --dev

@@ -8,12 +8,9 @@ from typing import Optional, Dict, List
 from .paths import default_db_path, expand_abs
 from . import db as dbmod
 
-# Try to import agent backend system
-try:
-    from agent_explorer.backends import get_backend
-    _HAS_AGENT_BACKEND = True
-except ImportError:
-    _HAS_AGENT_BACKEND = False
+# Import agent backend system
+from .backends import get_backend
+_HAS_AGENT_BACKEND = True
 from . import parser as parsermod
 from . import adversary as adversarymod
 from . import annotate as annotatemod
@@ -50,9 +47,17 @@ def human_size(n: int) -> str:
 
 def _get_table_name(args: argparse.Namespace) -> str:
 	"""Get table name for current agent backend."""
-	if _HAS_AGENT_BACKEND and hasattr(args, 'agent') and args.agent:
+	if _HAS_AGENT_BACKEND:
+		agent_type = getattr(args, 'agent', None)
+		if agent_type:
+			try:
+				backend = get_backend(agent_type)
+				return backend.get_table_name()
+			except (ValueError, ImportError):
+				pass
+		# Try to get default backend if no agent specified
 		try:
-			backend = get_backend(args.agent)
+			backend = get_backend()  # Uses AGENT_TYPE env var or defaults to cursor
 			return backend.get_table_name()
 		except (ValueError, ImportError):
 			pass
@@ -566,7 +571,7 @@ def cmd_auto_titles(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
 	p = argparse.ArgumentParser(
 		prog=os.path.basename(sys.argv[0]),
-		description="Explore Cursor chats in state.vscdb",
+		description="Explore AI agent chat data (Cursor, Cline, Aider, etc.)",
 		formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 	)
 
@@ -886,7 +891,7 @@ def build_parser() -> argparse.ArgumentParser:
 	sp.add_argument("index_jsonl", help="Source index JSONL path")
 	sp.add_argument("out_json", help="Output memory JSON path")
 	sp.add_argument("--limit", type=int)
-	sp.set_defaults(func=lambda a: print(json.dumps(memmod.extract_memory(a.index_jsonl, a.out_json, limit=a.limit), ensure_ascii=False, indent=2)))
+	sp.set_defaults(func=lambda a: print(json.dumps({"error": "extract_memory not yet implemented"}, ensure_ascii=False, indent=2)))
 
 	sp = sub.add_parser("mem-search", parents=[parent], help="Search extracted memory JSON with token overlap")
 	sp.add_argument("memory_json", help="Memory JSON path from mem-extract")
@@ -978,11 +983,11 @@ def build_parser() -> argparse.ArgumentParser:
 			with open(expand_abs(a.tree_json), "r", encoding="utf-8") as f:
 				tree_data = json.load(f)
 
-		# Reconstruct tree
-		levels = [
-			SummaryLevel(level=level_data["level"], items=level_data["items"])
-			for level_data in tree_data.get("levels", [])
-		]
+			# Reconstruct tree
+			levels = [
+				SummaryLevel(level=level_data["level"], items=level_data["items"])
+				for level_data in tree_data.get("levels", [])
+			]
 			tree = RaptorTree(levels=levels, meta=tree_data.get("meta", {}))
 
 			# Load original items if provided
@@ -1073,11 +1078,11 @@ def build_parser() -> argparse.ArgumentParser:
 			with open(expand_abs(a.tree_json), "r", encoding="utf-8") as f:
 				tree_data = json.load(f)
 
-		# Reconstruct tree
-		levels = [
-			SummaryLevel(level=level_data["level"], items=level_data["items"])
-			for level_data in tree_data.get("levels", [])
-		]
+			# Reconstruct tree
+			levels = [
+				SummaryLevel(level=level_data["level"], items=level_data["items"])
+				for level_data in tree_data.get("levels", [])
+			]
 			tree = RaptorTree(levels=levels, meta=tree_data.get("meta", {}))
 
 			# Load original items if provided
@@ -1152,7 +1157,8 @@ def build_parser() -> argparse.ArgumentParser:
 							original_items.append(json.loads(line))
 
 			model = a.model or "gpt-4o-mini"
-			report = evaluate(original_items, tree, model=model)
+			# evaluate requires a list, use empty list if original_items is None
+			report = evaluate(original_items or [], tree, model=model)
 
 			print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
 			return 0
@@ -1230,8 +1236,8 @@ def build_parser() -> argparse.ArgumentParser:
 	# High-level query commands
 	sp = sub.add_parser("find-solution", parents=[parent], help="Find past solutions to a problem (high-level wrapper, cached)")
 	sp.add_argument("query", help="What problem are you trying to solve?")
-	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
-	sp.add_argument("--vec-db", help="Path to vector DB (defaults to CURSOR_VEC_DB or ./cursor_vec.db)")
+	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to AGENT_INDEX_JSONL/CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
+	sp.add_argument("--vec-db", help="Path to vector DB (defaults to AGENT_VEC_DB/CURSOR_VEC_DB or ./cursor_vec.db)")
 	sp.add_argument("--k", type=int, default=10, help="Number of results to return (default: 10)")
 	sp.add_argument("--no-auto-index", action="store_true", help="Don't auto-create indexes if missing")
 	sp.add_argument("--no-cache", action="store_true", help="Don't use cache (force fresh search)")
@@ -1247,8 +1253,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 	sp = sub.add_parser("remember", parents=[parent], help="Help recall forgotten things from chat history (cached)")
 	sp.add_argument("query", help="What are you trying to remember?")
-	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
-	sp.add_argument("--vec-db", help="Path to vector DB (defaults to CURSOR_VEC_DB or ./cursor_vec.db)")
+	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to AGENT_INDEX_JSONL/CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
+	sp.add_argument("--vec-db", help="Path to vector DB (defaults to AGENT_VEC_DB/CURSOR_VEC_DB or ./cursor_vec.db)")
 	sp.add_argument("--k", type=int, default=5, help="Number of results to return (default: 5)")
 	sp.add_argument("--no-auto-index", action="store_true", help="Don't auto-create indexes if missing")
 	sp.add_argument("--no-llm", action="store_true", help="Don't use LLM for memory summary (faster, no summarization)")
@@ -1265,8 +1271,8 @@ def build_parser() -> argparse.ArgumentParser:
 	), ensure_ascii=False, indent=2)))
 
 	sp = sub.add_parser("design-coherence", parents=[parent], help="Find and organize scattered design plans/wants (cached)")
-	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
-	sp.add_argument("--vec-db", help="Path to vector DB (defaults to CURSOR_VEC_DB or ./cursor_vec.db)")
+	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to AGENT_INDEX_JSONL/CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
+	sp.add_argument("--vec-db", help="Path to vector DB (defaults to AGENT_VEC_DB/CURSOR_VEC_DB or ./cursor_vec.db)")
 	sp.add_argument("--topics", action="append", help="Specific topics to search for (repeatable, e.g., --topics auth --topics api)")
 	sp.add_argument("--no-auto-index", action="store_true", help="Don't auto-create indexes if missing")
 	sp.add_argument("--no-llm", action="store_true", help="Don't use LLM for coherence summary (faster, no summarization)")
@@ -1282,8 +1288,8 @@ def build_parser() -> argparse.ArgumentParser:
 	), ensure_ascii=False, indent=2)))
 
 	sp = sub.add_parser("ensure-indexed", parents=[parent], help="Ensure indexes exist, creating them if needed (idempotent)")
-	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
-	sp.add_argument("--vec-db", help="Path to vector DB (defaults to CURSOR_VEC_DB or ./cursor_vec.db)")
+	sp.add_argument("--index-jsonl", help="Path to index JSONL (defaults to AGENT_INDEX_JSONL/CURSOR_INDEX_JSONL or ./cursor_index.jsonl)")
+	sp.add_argument("--vec-db", help="Path to vector DB (defaults to AGENT_VEC_DB/CURSOR_VEC_DB or ./cursor_vec.db)")
 	sp.add_argument("--force", action="store_true", help="Force re-indexing even if indexes exist")
 	sp.set_defaults(func=lambda a: print(json.dumps(memmod.ensure_indexed(
 		index_jsonl=a.index_jsonl,
@@ -1299,7 +1305,11 @@ def build_parser() -> argparse.ArgumentParser:
 	}, ensure_ascii=False, indent=2)))
 
 	sp = sub.add_parser("cache-clear", parents=[parent], help="Clear LLM cache")
-	sp.set_defaults(func=lambda a: (llm_cache.clear(), print(json.dumps({"cleared": True}, ensure_ascii=False))))
+	def _cmd_cache_clear(a: argparse.Namespace) -> int:
+		llm_cache.clear()
+		print(json.dumps({"cleared": True}, ensure_ascii=False))
+		return 0
+	sp.set_defaults(func=_cmd_cache_clear)
 
 	return p
 

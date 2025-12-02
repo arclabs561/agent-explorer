@@ -1,5 +1,5 @@
-from cursor_explorer import parser as parsermod
-from cursor_explorer import rag as ragmod
+from agent_explorer import parser as parsermod
+from agent_explorer import rag as ragmod
 
 
 def test_coalesce_and_pairs_basic():

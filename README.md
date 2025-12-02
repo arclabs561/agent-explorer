@@ -39,8 +39,8 @@ uv run agent-explorer design-coherence
 uv run agent-explorer ensure-indexed
 
 # Vector search (requires sqlite-vec)
-uv run agent-explorer vec-db-index ./cursor_vec.db ./cursor_index.jsonl
-uv run agent-explorer vec-db-search ./cursor_vec.db --query "..." --k 10
+uv run agent-explorer vec-db-index ./agent_vec.db ./agent_index.jsonl
+uv run agent-explorer vec-db-search ./agent_vec.db --query "..." --k 10
 ```
 
 ### Multi-scale viewing
@@ -56,7 +56,10 @@ uv run agent-explorer multiscale-check tree.json
 
 ## Configuration
 
-- `CURSOR_STATE_DB`: Override default database path
+- `AGENT_TYPE`: Agent type (cursor, cline, etc.). Defaults to 'cursor'.
+- `AGENT_STATE_DB` / `CURSOR_STATE_DB`: Override default database path (generic or agent-specific, backward compatible)
+- `AGENT_INDEX_JSONL` / `CURSOR_INDEX_JSONL`: Override index JSONL path (defaults to `./cursor_index.jsonl`)
+- `AGENT_VEC_DB` / `CURSOR_VEC_DB`: Override vector DB path (defaults to `./cursor_vec.db`)
 - `OPENAI_API_KEY`: Required for LLM features
 - `OPENAI_MODEL`: Default model (default: `gpt-4o-mini`)
 - `OPENAI_EMBED_MODEL`: Embedding model (default: `text-embedding-3-small`)

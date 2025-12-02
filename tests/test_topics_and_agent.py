@@ -3,9 +3,9 @@ import types
 import os
 from pathlib import Path
 
-from cursor_explorer import toolchat as toolchatmod
-from cursor_explorer import cli as climod
-from cursor_explorer import cluster as clustermod
+from agent_explorer import toolchat as toolchatmod
+from agent_explorer import cli as climod
+from agent_explorer import cluster as clustermod
 import llm_helpers as llmmod
 
 
@@ -66,7 +66,7 @@ def test_name_topics_cli_stubbed(tmp_path, monkeypatch):
 
 def test_index_cli_topics_out_stubbed(monkeypatch, tmp_path):
 	# Stub index builder and toponymy builder; run index with topics-out
-	monkeypatch.setattr("cursor_explorer.index.build_index", lambda out, **kw: 123)
+	monkeypatch.setattr("agent_explorer.index.build_index", lambda out, **kw: 123)
 	monkeypatch.setattr(clustermod, "build_toponymy_topics", lambda *a, **k: {"meta": {"count": 0, "library": "toponymy"}})
 	p = climod.build_parser()
 	topics_out = tmp_path / "topics.json"
@@ -112,7 +112,7 @@ def test_require_client_loads_dotenv_and_uses_dummy(monkeypatch):
 	# Ensure env loader is invoked and dummy client returned without real OpenAI
 	called = {"env": 0}
 	monkeypatch.setenv("OPENAI_API_KEY", "")
-	monkeypatch.setattr("cursor_explorer.env.load_dotenv_if_present", lambda: called.__setitem__("env", called["env"] + 1))
+	monkeypatch.setattr("agent_explorer.env.load_dotenv_if_present", lambda: called.__setitem__("env", called["env"] + 1))
 	class DummyOpenAI:
 		def __init__(self):
 			pass

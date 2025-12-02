@@ -23,13 +23,13 @@ if [[ -f "$REPO/.env" ]]; then
   set +a
 fi
 # Optional user-level env files
-if [[ -f "$HOME/.cursor-explorer.env" ]]; then
+if [[ -f "$HOME/.agent-explorer.env" ]]; then
   # shellcheck disable=SC1091
-  source "$HOME/.cursor-explorer.env"
+  source "$HOME/.agent-explorer.env"
 fi
-if [[ -f "$HOME/.cursor_explorer.env" ]]; then
+if [[ -f "$HOME/.agent_explorer.env" ]]; then
   # shellcheck disable=SC1091
-  source "$HOME/.cursor_explorer.env"
+  source "$HOME/.agent_explorer.env"
 fi
 
 export PYTHONPATH="$REPO/src"
@@ -57,7 +57,7 @@ fi
 trap release_lock EXIT
 
 run_cmd() {
-  PYTHONPATH="$REPO/src" "$UV_BIN" run python -m cursor_explorer \
+  PYTHONPATH="$REPO/src" "$UV_BIN" run python -m agent_explorer \
     agent --prompt "$AGENT_PROMPT" --steps "$AGENT_STEPS" \
     --trace-meta job="$JOB" --trace-meta runner=script
 }
